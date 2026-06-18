@@ -4,9 +4,10 @@ import { CHORD_RULES } from '../../core/music-theory/chord-rules'
 describe('CHORD_RULES', () => {
   it('contains at least 14 rules', () => expect(CHORD_RULES.length).toBeGreaterThanOrEqual(14))
 
-  it('every rule has symbol, name, and intervals', () => {
+  it('every rule has a string symbol, a name, and intervals', () => {
     for (const rule of CHORD_RULES) {
-      expect(rule.symbol).toBeTruthy()
+      // symbol may be '' (major triad displays as just the root, e.g. "C")
+      expect(typeof rule.symbol).toBe('string')
       expect(rule.name).toBeTruthy()
       expect(rule.intervals.length).toBeGreaterThanOrEqual(2)
     }
