@@ -7,6 +7,7 @@
   --color-text-muted: #8B8FA8;
   --color-border: #E2E5F0;
   --color-on-primary: #FFFFFF;
+  --color-piano-black-key: #1A1A2E;
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -24,6 +25,7 @@
   --color-text-muted: #6B6F88;
   --color-border: #2A2D3E;
   --color-on-primary: #FFFFFF;
+  --color-piano-black-key: #0D0F1A;
 
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.4);
 }
