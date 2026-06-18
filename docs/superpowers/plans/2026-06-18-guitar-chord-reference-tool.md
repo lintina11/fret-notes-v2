@@ -12,7 +12,11 @@
 
 - Node.js 20+
 - Nuxt 3.12+, Vue 3.4+
-- TypeScript strict mode enabled
+- TypeScript strict mode enabled (Nuxt 4's tsconfig also sets
+  `noUncheckedIndexedAccess: true` — array index access returns `T | undefined`,
+  so provably-in-bounds lookups like `NOTE_NAMES[pitchClass]` / `OPEN_STRINGS[stringIndex]`
+  need a `!` non-null assertion, and `matches[0]` needs a `if (!primary) return null` guard.
+  Verify with `npx nuxi typecheck`, which `npm test` / Vitest does NOT replicate.)
 - No external music-theory libraries — all logic hand-rolled
 - Touch targets minimum 44×44px on all interactive elements
 - CSS variables for all colors (enables light/dark switching)
@@ -441,9 +445,10 @@ import { CHORD_RULES } from '../../core/music-theory/chord-rules'
 describe('CHORD_RULES', () => {
   it('contains at least 14 rules', () => expect(CHORD_RULES.length).toBeGreaterThanOrEqual(14))
 
-  it('every rule has symbol, name, and intervals', () => {
+  it('every rule has a string symbol, a name, and intervals', () => {
     for (const rule of CHORD_RULES) {
-      expect(rule.symbol).toBeTruthy()
+      // symbol may be '' (major triad displays as just the root, e.g. "C")
+      expect(typeof rule.symbol).toBe('string')
       expect(rule.name).toBeTruthy()
       expect(rule.intervals.length).toBeGreaterThanOrEqual(2)
     }
