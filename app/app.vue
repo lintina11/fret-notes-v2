@@ -4,7 +4,7 @@
       <button @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
     </header>
     <main>
-      <p>fret-notes-v2</p>
+      <Fretboard />
     </main>
   </div>
 </template>
