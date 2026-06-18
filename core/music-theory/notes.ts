@@ -8,11 +8,11 @@ export function midiToPitchClass(midi: number): number {
 }
 
 export function midiToNoteName(midi: number): string {
-  return NOTE_NAMES[midiToPitchClass(midi)]
+  return NOTE_NAMES[midiToPitchClass(midi)]!
 }
 
 export function fretToMidi(stringIndex: number, fret: number): number {
-  return OPEN_STRINGS[stringIndex] + fret
+  return OPEN_STRINGS[stringIndex]! + fret
 }
 
 export function fretToPitchClass(stringIndex: number, fret: number): number {

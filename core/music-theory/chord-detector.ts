@@ -45,11 +45,11 @@ export function detectChord(notes: SelectedNote[]): ChordResult | null {
 
     for (const rule of CHORD_RULES) {
       if (arraysEqual(intervals, rule.intervals)) {
-        const root = NOTE_NAMES[rootPC]
-        const bassNote = bassPC !== rootPC ? NOTE_NAMES[bassPC] : null
+        const root = NOTE_NAMES[rootPC]!
+        const bassNote = bassPC !== rootPC ? NOTE_NAMES[bassPC]! : null
 
         const noteInfos: NoteInfo[] = pitchClasses.map(pc => ({
-          noteName: NOTE_NAMES[pc],
+          noteName: NOTE_NAMES[pc]!,
           intervalSemitones: intervalBetween(rootPC, pc),
           intervalName: INTERVAL_NAMES[intervalBetween(rootPC, pc)] ?? '',
         }))
@@ -62,10 +62,9 @@ export function detectChord(notes: SelectedNote[]): ChordResult | null {
     }
   }
 
-  if (matches.length === 0) return null
-
   // Primary = first match; alternates = remaining chord display names
   const primary = matches[0]
+  if (!primary) return null
   primary.alternates = matches.slice(1).map(m => {
     const slash = m.bassNote ? `/${m.bassNote}` : ''
     return `${m.root}${m.symbol}${slash}`
