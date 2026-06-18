@@ -142,6 +142,7 @@ export default defineNuxtConfig({
   --color-text-muted: #8B8FA8;
   --color-border: #E2E5F0;
   --color-on-primary: #FFFFFF;   /* text/icon on a primary-colored surface */
+  --color-piano-black-key: #1A1A2E;  /* stays dark in BOTH themes */
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -159,6 +160,7 @@ export default defineNuxtConfig({
   --color-text-muted: #6B6F88;
   --color-border: #2A2D3E;
   --color-on-primary: #FFFFFF;
+  --color-piano-black-key: #0D0F1A;
 
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.4);
 }
@@ -1322,14 +1324,13 @@ const activePitchClasses = computed<Set<number>>(() => {
 
 // Choose best octave start (C) so max active notes fall within 2 octaves
 const startOctave = computed<number>(() => {
-  const active = activePitchClasses.value
-  if (active.size === 0) return 4  // default C4–C6
-
-  // Try C3 through C5 as start octave; pick the one that covers most notes
-  // Since we show 2 octaves (25 keys), all 12 pitch classes are covered —
-  // so we just default to a sensible range based on guitar register.
-  // Guitar sounds C2–C6 roughly; middle range is C3–C5.
-  return 3
+  // Detection works on octave-agnostic pitch classes, so we cannot derive a
+  // real octave from the chord. A fixed 2-octave window (25 keys) already
+  // contains every one of the 12 pitch classes, so highlighting is always
+  // complete. We pin the window to the guitar's middle register:
+  //   - no notes selected: C4–C6 (a neutral resting view)
+  //   - notes selected:    C3–C5 (centres the guitar's typical range)
+  return activePitchClasses.value.size === 0 ? 4 : 3
 })
 
 const visibleKeys = computed<PianoKey[]>(() => {
@@ -1398,7 +1399,7 @@ const rangeLabel = computed(() => {
 .key--black {
   width: 24px;
   height: 62px;
-  background: var(--color-text);
+  background: var(--color-piano-black-key);
   margin-left: -13px;
   margin-right: -13px;
   z-index: 2;
