@@ -95,7 +95,9 @@ describe('detectChord', () => {
     ]
     const result = detectChord(notes)
     expect(result).not.toBeNull()
-    expect(result!.alternates.length).toBeLessThanOrEqual(2)
+    // Exactly 2: the augmented triad has 3 root interpretations (primary + 2),
+    // so this both confirms the cap holds AND that alternates aren't dropped to 0.
+    expect(result!.alternates.length).toBe(2)
   })
 
   it('alternates are formatted as root+symbol[/bass] for augmented triad with C as lowest note', () => {
