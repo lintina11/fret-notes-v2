@@ -4,6 +4,7 @@
       <button @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
     </header>
     <main>
+      <ChordResult />
       <Fretboard />
     </main>
   </div>
