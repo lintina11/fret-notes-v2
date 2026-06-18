@@ -141,6 +141,7 @@ export default defineNuxtConfig({
   --color-text: #1A1A2E;
   --color-text-muted: #8B8FA8;
   --color-border: #E2E5F0;
+  --color-on-primary: #FFFFFF;   /* text/icon on a primary-colored surface */
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -157,6 +158,7 @@ export default defineNuxtConfig({
   --color-text: #E8EAFF;
   --color-text-muted: #6B6F88;
   --color-border: #2A2D3E;
+  --color-on-primary: #FFFFFF;
 
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.4);
 }
@@ -907,7 +909,7 @@ git commit -m "feat: useFretboard composable with reactive fret state and chord 
 
 <script setup lang="ts">
 import { useFretboard } from '~/composables/useFretboard'
-import { fretToPitchClass, midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
+import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
 const { pressedFrets, mutedStrings, toggleFret, toggleMute, clearAll } = useFretboard()
 
@@ -1004,7 +1006,7 @@ function handleOpenClick(stringIndex: number) {
   height: 36px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 11px;
   font-weight: 500;
   display: flex;
@@ -1205,7 +1207,7 @@ const chordKey = computed(() =>
 
 .note-pill {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 14px;
   font-weight: 600;
   padding: 4px 12px;
