@@ -6,6 +6,7 @@
     <main>
       <ChordResult />
       <Fretboard />
+      <PianoKeyboard />
     </main>
   </div>
 </template>
