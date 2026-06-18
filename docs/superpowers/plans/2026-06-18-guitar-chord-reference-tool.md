@@ -23,30 +23,39 @@
 
 ## File Map
 
+> **Nuxt 4 directory convention (decided during execution):** This project
+> scaffolded as Nuxt 4, whose source directory is `app/`. The `~`/`@` alias
+> points to `app/` (srcDir); `~~`/`@@` point to the repo root (rootDir).
+> Therefore: app code (components, composables, assets, app.vue) lives under
+> `app/`; framework-agnostic pure logic (`core/`) and `tests/` stay at the
+> repo root. App code imports `core/` via `~~/core/...`; tests import `core/`
+> via relative paths.
+
 ```
 fret-notes-v2/
-├── core/
+├── core/                       # repo root — framework-agnostic pure logic
 │   └── music-theory/
 │       ├── notes.ts            # Pitch class constants, note names, MIDI utils
 │       ├── intervals.ts        # Interval label lookup
 │       ├── chord-rules.ts      # Interval set → chord name/symbol definitions
 │       └── chord-detector.ts   # Main detection: SelectedNote[] → ChordResult
-├── composables/
-│   └── useFretboard.ts         # Shared reactive state for all 3 components
-├── components/
-│   ├── Fretboard/
-│   │   └── index.vue           # Interactive 6×12 fretboard grid
-│   ├── ChordResult/
-│   │   └── index.vue           # Chord name, alternates, notes, intervals
-│   └── PianoKeyboard/
-│       └── index.vue           # 2-octave piano, read-only, auto-range
-├── app.vue                     # Root layout + light/dark toggle
+├── app/                        # Nuxt 4 srcDir (~ alias)
+│   ├── app.vue                 # Root layout + light/dark toggle
+│   ├── assets/
+│   │   └── styles/
+│   │       ├── variables.css   # All CSS custom properties (colors, spacing)
+│   │       └── global.css      # Reset, typography, font imports
+│   ├── composables/
+│   │   └── useFretboard.ts     # Shared reactive state for all 3 components
+│   └── components/
+│       ├── Fretboard/
+│       │   └── index.vue       # Interactive 6×12 fretboard grid
+│       ├── ChordResult/
+│       │   └── index.vue       # Chord name, alternates, notes, intervals
+│       └── PianoKeyboard/
+│           └── index.vue       # 2-octave piano, read-only, auto-range
 ├── nuxt.config.ts
-├── assets/
-│   └── styles/
-│       ├── variables.css       # All CSS custom properties (colors, spacing)
-│       └── global.css          # Reset, typography, font imports
-└── tests/
+└── tests/                      # repo root — Vitest, imports core via relative paths
     └── music-theory/
         ├── notes.test.ts
         ├── intervals.test.ts
@@ -727,7 +736,7 @@ git commit -m "feat: chord detector with slash chord and alternate candidate sup
 ## Task 6: useFretboard Composable
 
 **Files:**
-- Create: `composables/useFretboard.ts`
+- Create: `app/composables/useFretboard.ts`
 
 **Interfaces:**
 - Consumes: `SelectedNote`, `ChordResult`, `detectChord` from `chord-detector.ts`; `fretToMidi`, `midiToPitchClass`, `midiToNoteName` from `notes.ts`
@@ -740,12 +749,12 @@ git commit -m "feat: chord detector with slash chord and alternate candidate sup
   - `clearAll(): void`
   - `getSelectedNotes(): SelectedNote[]`
 
-- [ ] **Step 1: Create `composables/useFretboard.ts`**
+- [ ] **Step 1: Create `app/composables/useFretboard.ts`**
 
 ```ts
 import { ref, computed } from 'vue'
-import { detectChord, type SelectedNote, type ChordResult } from '~/core/music-theory/chord-detector'
-import { fretToMidi, midiToPitchClass, midiToNoteName } from '~/core/music-theory/notes'
+import { detectChord, type SelectedNote, type ChordResult } from '~~/core/music-theory/chord-detector'
+import { fretToMidi, midiToPitchClass, midiToNoteName } from '~~/core/music-theory/notes'
 
 // Singleton state — shared across all components
 const pressedFrets = ref(new Map<number, number>())  // stringIndex → fret
@@ -828,7 +837,7 @@ Expected: No type errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add composables/useFretboard.ts
+git add app/composables/useFretboard.ts
 git commit -m "feat: useFretboard composable with reactive fret state and chord detection"
 ```
 
@@ -837,13 +846,13 @@ git commit -m "feat: useFretboard composable with reactive fret state and chord 
 ## Task 7: Fretboard Component
 
 **Files:**
-- Create: `components/Fretboard/index.vue`
+- Create: `app/components/Fretboard/index.vue`
 
 **Interfaces:**
-- Consumes: `useFretboard()` from `composables/useFretboard.ts`; `fretToPitchClass`, `midiToNoteName`, `OPEN_STRINGS` from `notes.ts`
+- Consumes: `useFretboard()` from `app/composables/useFretboard.ts`; `fretToPitchClass`, `midiToNoteName`, `OPEN_STRINGS` from `notes.ts`
 - Produces: Interactive fretboard UI; all state changes go through `toggleFret` / `toggleMute`
 
-- [ ] **Step 1: Create `components/Fretboard/index.vue`**
+- [ ] **Step 1: Create `app/components/Fretboard/index.vue`**
 
 ```vue
 <template>
@@ -893,7 +902,7 @@ git commit -m "feat: useFretboard composable with reactive fret state and chord 
 
 <script setup lang="ts">
 import { useFretboard } from '~/composables/useFretboard'
-import { fretToPitchClass, midiToNoteName, OPEN_STRINGS } from '~/core/music-theory/notes'
+import { fretToPitchClass, midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
 const { pressedFrets, mutedStrings, toggleFret, toggleMute, clearAll } = useFretboard()
 
@@ -1039,9 +1048,9 @@ function handleOpenClick(stringIndex: number) {
 </style>
 ```
 
-- [ ] **Step 2: Add Fretboard to `app.vue` and verify in browser**
+- [ ] **Step 2: Add Fretboard to `app/app.vue` and verify in browser**
 
-Update `app.vue` main section:
+Update `app/app.vue` main section:
 ```vue
 <main>
   <Fretboard />
@@ -1057,7 +1066,7 @@ Open `http://localhost:3000`. Tap fret cells — dots should appear with note na
 - [ ] **Step 3: Commit**
 
 ```bash
-git add components/Fretboard/index.vue app.vue
+git add app/components/Fretboard/index.vue app/app.vue
 git commit -m "feat: interactive Fretboard component with press dots, open/mute toggle"
 ```
 
@@ -1066,12 +1075,12 @@ git commit -m "feat: interactive Fretboard component with press dots, open/mute 
 ## Task 8: ChordResult Component
 
 **Files:**
-- Create: `components/ChordResult/index.vue`
+- Create: `app/components/ChordResult/index.vue`
 
 **Interfaces:**
 - Consumes: `useFretboard()` → `detectedChord`
 
-- [ ] **Step 1: Create `components/ChordResult/index.vue`**
+- [ ] **Step 1: Create `app/components/ChordResult/index.vue`**
 
 ```vue
 <template>
@@ -1227,7 +1236,7 @@ const chordKey = computed(() =>
 </style>
 ```
 
-- [ ] **Step 2: Add to `app.vue` and verify in browser**
+- [ ] **Step 2: Add to `app/app.vue` and verify in browser**
 
 ```vue
 <main>
@@ -1241,7 +1250,7 @@ Open browser, tap frets — chord name, notes and intervals should appear with a
 - [ ] **Step 3: Commit**
 
 ```bash
-git add components/ChordResult/index.vue app.vue
+git add app/components/ChordResult/index.vue app/app.vue
 git commit -m "feat: ChordResult component with chord name, alternates, notes and intervals"
 ```
 
@@ -1250,13 +1259,13 @@ git commit -m "feat: ChordResult component with chord name, alternates, notes an
 ## Task 9: PianoKeyboard Component
 
 **Files:**
-- Create: `components/PianoKeyboard/index.vue`
+- Create: `app/components/PianoKeyboard/index.vue`
 
 **Interfaces:**
 - Consumes: `useFretboard()` → `detectedChord`
 - Logic: Given detected chord's pitch classes, pick 2-octave window (C?–C?+2) that covers the most notes, render black/white keys, highlight matching ones.
 
-- [ ] **Step 1: Create `components/PianoKeyboard/index.vue`**
+- [ ] **Step 1: Create `app/components/PianoKeyboard/index.vue`**
 
 ```vue
 <template>
@@ -1282,7 +1291,7 @@ git commit -m "feat: ChordResult component with chord name, alternates, notes an
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
-import { NOTE_NAMES } from '~/core/music-theory/notes'
+import { NOTE_NAMES } from '~~/core/music-theory/notes'
 
 const { detectedChord } = useFretboard()
 
@@ -1412,7 +1421,7 @@ const rangeLabel = computed(() => {
 </style>
 ```
 
-- [ ] **Step 2: Add to `app.vue` and verify in browser**
+- [ ] **Step 2: Add to `app/app.vue` and verify in browser**
 
 ```vue
 <main>
@@ -1427,7 +1436,7 @@ Tap some frets, verify piano keys highlight corresponding notes.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add components/PianoKeyboard/index.vue app.vue
+git add app/components/PianoKeyboard/index.vue app/app.vue
 git commit -m "feat: PianoKeyboard component with 2-octave display and active note highlighting"
 ```
 
@@ -1436,13 +1445,13 @@ git commit -m "feat: PianoKeyboard component with 2-octave display and active no
 ## Task 10: Layout — Responsive & Light/Dark
 
 **Files:**
-- Modify: `app.vue` (full layout implementation)
+- Modify: `app/app.vue` (full layout implementation)
 
 **Interfaces:**
 - Consumes: All three components + CSS variables from `variables.css`
 - Produces: iPad landscape split layout, portrait/phone stacked layout, working light/dark toggle
 
-- [ ] **Step 1: Rewrite `app.vue` with full layout**
+- [ ] **Step 1: Rewrite `app/app.vue` with full layout**
 
 ```vue
 <template>
@@ -1572,7 +1581,7 @@ npm run dev
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app.vue
+git add app/app.vue
 git commit -m "feat: responsive layout with iPad landscape split view and light/dark theme toggle"
 ```
 
