@@ -1,6 +1,6 @@
 <template>
   <div class="chord-result">
-    <template v-if="detectedChord">
+    <template v-if="detectedChord && !detectedChord.unrecognized">
       <Transition name="chord-fade" mode="out-in">
         <div :key="chordKey" class="result-inner">
           <div class="chord-name-wrap">
@@ -30,6 +30,23 @@
       </Transition>
     </template>
 
+    <template v-else-if="detectedChord && detectedChord.unrecognized">
+      <Transition name="chord-fade" mode="out-in">
+        <div :key="chordKey" class="result-inner">
+          <p class="unrecognized-label">音集</p>
+          <div class="notes-row">
+            <div
+              v-for="noteInfo in detectedChord.notes"
+              :key="noteInfo.noteName"
+              class="note-item"
+            >
+              <span class="note-pill">{{ noteInfo.noteName }}</span>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </template>
+
     <div v-else class="empty-state">
       <p>點選指板上的格子來識別和弦</p>
     </div>
@@ -42,11 +59,13 @@ import { useFretboard } from '~/composables/useFretboard'
 
 const { detectedChord } = useFretboard()
 
-const chordKey = computed(() =>
-  detectedChord.value
-    ? `${detectedChord.value.root}${detectedChord.value.symbol}${detectedChord.value.bassNote ?? ''}`
-    : 'empty'
-)
+const chordKey = computed(() => {
+  if (!detectedChord.value) return 'empty'
+  if (detectedChord.value.unrecognized) {
+    return 'unknown:' + detectedChord.value.notes.map(n => n.noteName).join(',')
+  }
+  return `${detectedChord.value.root}${detectedChord.value.symbol}${detectedChord.value.bassNote ?? ''}`
+})
 </script>
 
 <style scoped>
@@ -127,6 +146,12 @@ const chordKey = computed(() =>
   font-size: 11px;
   color: var(--color-text-muted);
   text-align: center;
+}
+
+.unrecognized-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
 }
 
 .empty-state {

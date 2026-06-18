@@ -23,6 +23,8 @@ export interface ChordResult {
   bassNote: string | null  // set when lowest note ≠ root
   notes: NoteInfo[]        // unique pitch classes, root first
   alternates: string[]     // other possible chord names for same note set
+  // true when the note set matched no chord rule but still has ≥2 distinct notes
+  unrecognized?: boolean
 }
 
 export function detectChord(notes: SelectedNote[]): ChordResult | null {
@@ -62,10 +64,20 @@ export function detectChord(notes: SelectedNote[]): ChordResult | null {
     }
   }
 
-  // Primary = first match; alternates = remaining chord display names
-  const primary = matches[0]
-  if (!primary) return null
-  primary.alternates = matches.slice(1).map(m => {
+  // No matches — return unrecognized result with component notes
+  if (matches.length === 0) {
+    const sortedPCs = [...pitchClasses].sort((a, b) => a - b)
+    const notes: NoteInfo[] = sortedPCs.map(pc => ({
+      noteName: NOTE_NAMES[pc]!,
+      intervalSemitones: 0,
+      intervalName: '',
+    }))
+    return { root: '', symbol: '', name: '', bassNote: null, notes, alternates: [], unrecognized: true }
+  }
+
+  // Primary = first match; alternates = remaining chord display names (capped at 2)
+  const primary = matches[0]!
+  primary.alternates = matches.slice(1, 3).map(m => {
     const slash = m.bassNote ? `/${m.bassNote}` : ''
     return `${m.root}${m.symbol}${slash}`
   })
