@@ -6,6 +6,7 @@
   --color-text: #1A1A2E;
   --color-text-muted: #8B8FA8;
   --color-border: #E2E5F0;
+  --color-on-primary: #FFFFFF;
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -22,6 +23,7 @@
   --color-text: #E8EAFF;
   --color-text-muted: #6B6F88;
   --color-border: #2A2D3E;
+  --color-on-primary: #FFFFFF;
 
   --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.4);
 }

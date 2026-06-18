@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { useFretboard } from '~/composables/useFretboard'
-import { fretToPitchClass, midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
+import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
 const { pressedFrets, mutedStrings, toggleFret, toggleMute, clearAll } = useFretboard()
 
@@ -142,7 +142,7 @@ function handleOpenClick(stringIndex: number) {
   height: 36px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 11px;
   font-weight: 500;
   display: flex;
