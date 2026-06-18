@@ -746,7 +746,7 @@ git commit -m "feat: chord detector with slash chord and alternate candidate sup
 **Interfaces:**
 - Consumes: `SelectedNote`, `ChordResult`, `detectChord` from `chord-detector.ts`; `fretToMidi`, `midiToPitchClass`, `midiToNoteName` from `notes.ts`
 - Produces (all reactive, exported from composable):
-  - `pressedFrets: Ref<Map<string, number>>` — key = `"${stringIndex}"`, value = fret number
+  - `pressedFrets: Ref<Map<number, number>>` — key = `stringIndex` (number 0–5), value = fret number
   - `mutedStrings: Ref<Set<number>>` — string indices marked as muted
   - `detectedChord: ComputedRef<ChordResult | null>`
   - `toggleFret(stringIndex: number, fret: number): void`
