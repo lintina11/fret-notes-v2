@@ -1,176 +1,325 @@
 <template>
-  <div class="fretboard-wrap">
-    <div class="fretboard">
-      <!-- Open string row -->
-      <div class="fret-row open-row">
-        <div class="fret-label"></div>
-        <div
-          v-for="s in STRINGS"
-          :key="s"
-          class="open-cell"
-          @click="handleOpenClick(s)"
-        >
-          <span v-if="mutedStrings.has(s)" class="mute-mark">×</span>
-          <span v-else-if="!pressedFrets.has(s)" class="open-circle"></span>
-        </div>
-      </div>
-
-      <!-- Fret rows 1–12 -->
-      <div
-        v-for="fret in FRETS"
-        :key="fret"
-        class="fret-row"
+  <div class="chord-diagram-wrap">
+    <svg
+      class="chord-svg"
+      :viewBox="`0 0 ${SVG_W} ${SVG_H}`"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <!-- Layer 6: Open / muted string markers above nut -->
+      <g
+        v-for="s in STRINGS"
+        :key="`marker-${s}`"
+        class="string-marker"
+        @click="toggleMute(s)"
       >
-        <div class="fret-label">{{ fret }}</div>
-        <div
-          v-for="s in STRINGS"
-          :key="s"
-          class="fret-cell"
-          :class="{ 'has-dot': POSITION_DOTS.includes(fret) && s === 2 }"
-          @click="toggleFret(s, fret)"
-        >
-          <span
-            v-if="pressedFrets.get(s) === fret"
-            class="press-dot"
-          >
-            {{ noteNameAt(s, fret) }}
-          </span>
-        </div>
-      </div>
+        <text
+          v-if="mutedStrings.has(s)"
+          :x="sx(s)"
+          :y="TOP_PAD - 14"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          class="mute-text"
+        >×</text>
+        <circle
+          v-else-if="!pressedFrets.has(s)"
+          :cx="sx(s)"
+          :cy="TOP_PAD - 14"
+          :r="OPEN_RADIUS"
+          class="open-circle-svg"
+        />
+      </g>
+
+      <!-- Layer 3: Nut bar (at open position) or fret label -->
+      <rect
+        v-if="startFret === 1"
+        :x="sx(0)"
+        :y="TOP_PAD - NUT_THICKNESS"
+        :width="sx(5) - sx(0)"
+        :height="NUT_THICKNESS"
+        class="nut"
+      />
+      <text
+        v-else
+        :x="sx(0) - 6"
+        :y="TOP_PAD + FRET_GAP / 2"
+        text-anchor="end"
+        dominant-baseline="middle"
+        class="fret-label-text"
+      >{{ startFret }}fr</text>
+
+      <!-- Layer 2: String lines (vertical) -->
+      <line
+        v-for="s in STRINGS"
+        :key="`string-${s}`"
+        :x1="sx(s)" :y1="TOP_PAD"
+        :x2="sx(s)" :y2="TOP_PAD + DISPLAY_FRETS * FRET_GAP"
+        class="string-line"
+      />
+
+      <!-- Layer 2: Fret lines (horizontal) -->
+      <line
+        v-for="fi in FRET_LINE_INDICES"
+        :key="`fretline-${fi}`"
+        :x1="sx(0)" :y1="TOP_PAD + fi * FRET_GAP"
+        :x2="sx(5)" :y2="TOP_PAD + fi * FRET_GAP"
+        class="fret-line"
+      />
+
+      <!-- Layer 4: Position marker dots -->
+      <template v-for="(fretNum, idx) in displayFretNums" :key="`posdot-${fretNum}`">
+        <circle
+          v-if="POSITION_DOTS.includes(fretNum)"
+          :cx="(sx(0) + sx(5)) / 2"
+          :cy="TOP_PAD + idx * FRET_GAP + FRET_GAP / 2"
+          r="4"
+          class="position-dot"
+        />
+      </template>
+
+      <!-- Layer 1: Transparent click targets -->
+      <rect
+        v-for="cell in clickCells"
+        :key="`cell-${cell.s}-${cell.fi}`"
+        :x="sx(cell.s) - STRING_GAP / 2"
+        :y="TOP_PAD + cell.fi * FRET_GAP"
+        :width="STRING_GAP"
+        :height="FRET_GAP"
+        fill="transparent"
+        class="cell-target"
+        @click="toggleFret(cell.s, displayFretNums[cell.fi]!)"
+      />
+
+      <!-- Layer 5: Pressed note dots -->
+      <template v-for="s in STRINGS" :key="`pressed-${s}`">
+        <template v-if="pressedFrets.has(s) && fretInDisplay(pressedFrets.get(s)!)">
+          <circle
+            :cx="sx(s)"
+            :cy="TOP_PAD + fretDisplayIndex(pressedFrets.get(s)!) * FRET_GAP + FRET_GAP / 2"
+            :r="DOT_RADIUS"
+            class="press-dot-circle"
+          />
+          <text
+            :x="sx(s)"
+            :y="TOP_PAD + fretDisplayIndex(pressedFrets.get(s)!) * FRET_GAP + FRET_GAP / 2"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            class="press-dot-text"
+          >{{ noteNameAt(s, pressedFrets.get(s)!) }}</text>
+        </template>
+      </template>
+    </svg>
+
+    <!-- Navigation row -->
+    <div class="nav-row">
+      <button class="nav-btn" :disabled="startFret <= 1" @click="navigate(-1)">▲</button>
+      <span class="nav-label">{{ startFret === 1 ? 'Open' : `${startFret}fr` }}</span>
+      <button class="nav-btn" :disabled="startFret >= MAX_START_FRET" @click="navigate(1)">▼</button>
     </div>
 
-    <button class="clear-btn" @click="clearAll">清除</button>
+    <button class="clear-btn" @click="handleClear">清除</button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
 const { pressedFrets, mutedStrings, toggleFret, toggleMute, clearAll } = useFretboard()
 
+// ── Layout constants ──────────────────────────────────────────────
 const STRINGS = [0, 1, 2, 3, 4, 5]
-const FRETS = Array.from({ length: 12 }, (_, i) => i + 1)
+const DISPLAY_FRETS = 5
+const MAX_START_FRET = 12 - DISPLAY_FRETS + 1  // 8
 const POSITION_DOTS = [3, 5, 7, 9, 12]
 
+const STRING_GAP = 28
+const FRET_GAP = 38
+const LEFT_PAD = 28
+const RIGHT_PAD = 16
+const TOP_PAD = 50
+const BOTTOM_PAD = 22
+const NUT_THICKNESS = 5
+const DOT_RADIUS = 13
+const OPEN_RADIUS = 7
+
+const SVG_W = LEFT_PAD + 5 * STRING_GAP + RIGHT_PAD   // 184
+const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
+
+// Pre-computed fret line indices: 0, 1, 2, 3, 4, 5
+const FRET_LINE_INDICES = Array.from({ length: DISPLAY_FRETS + 1 }, (_, i) => i)
+
+// ── Coordinate helpers ────────────────────────────────────────────
+function sx(s: number): number { return LEFT_PAD + s * STRING_GAP }
+
+// ── Window state ──────────────────────────────────────────────────
+const startFret = ref(1)
+
+const displayFretNums = computed<number[]>(() =>
+  Array.from({ length: DISPLAY_FRETS }, (_, i) => startFret.value + i)
+)
+
+const clickCells = computed(() => {
+  const cells: { s: number; fi: number }[] = []
+  for (const s of STRINGS) {
+    for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
+      cells.push({ s, fi })
+    }
+  }
+  return cells
+})
+
+function fretInDisplay(fret: number): boolean {
+  return fret >= startFret.value && fret < startFret.value + DISPLAY_FRETS
+}
+
+function fretDisplayIndex(fret: number): number {
+  return fret - startFret.value
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+function navigate(dir: 1 | -1): void {
+  const next = Math.min(MAX_START_FRET, Math.max(1, startFret.value + dir))
+  if (next === startFret.value) return
+  startFret.value = next
+  // Clear any pressed frets now outside the visible window
+  for (const s of STRINGS) {
+    const fret = pressedFrets.get(s)
+    if (fret !== undefined && !fretInDisplay(fret)) {
+      toggleFret(s, fret)
+    }
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
 function noteNameAt(stringIndex: number, fret: number): string {
   return midiToNoteName(OPEN_STRINGS[stringIndex]! + fret)
 }
 
-function handleOpenClick(stringIndex: number) {
-  toggleMute(stringIndex)
+function handleClear(): void {
+  clearAll()
+  startFret.value = 1
 }
 </script>
 
 <style scoped>
-.fretboard-wrap {
+.chord-diagram-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 16px;
 }
 
-.fretboard {
-  display: grid;
-  grid-template-rows: auto repeat(12, 1fr);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
+.chord-svg {
   width: 100%;
-  max-width: 420px;
+  max-width: 240px;
+  height: auto;
+  overflow: visible;
 }
 
-.fret-row {
-  display: grid;
-  grid-template-columns: 28px repeat(6, 1fr);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.fret-row:last-child {
-  border-bottom: none;
-}
-
-.fret-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  color: var(--color-text-muted);
-  font-family: 'Inter', sans-serif;
-  border-right: 1px solid var(--color-border);
-}
-
-.fret-cell,
-.open-cell {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
+.string-marker {
   cursor: pointer;
-  border-right: 1px solid var(--color-border);
-  transition: background 0.1s;
 }
 
-.fret-cell:last-child,
-.open-cell:last-child {
-  border-right: none;
+.mute-text {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
 }
 
-.fret-cell:active {
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+.open-circle-svg {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
 }
 
-/* Dot marker on fret positions */
-.fret-cell.has-dot::after {
-  content: '';
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-border);
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+.nut {
+  fill: var(--color-text);
 }
 
-.press-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 11px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
-  transition: transform 0.08s, opacity 0.08s;
+.fret-label-text {
+  font-size: 10px;
+  fill: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
+}
+
+.string-line {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.fret-line {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.position-dot {
+  fill: var(--color-border);
+}
+
+.cell-target {
+  cursor: pointer;
+}
+
+.press-dot-circle {
+  fill: var(--color-primary);
   animation: dot-in 0.08s ease;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @keyframes dot-in {
-  from { transform: scale(0.5); opacity: 0; }
+  from { transform: scale(0.3); opacity: 0; }
   to   { transform: scale(1);   opacity: 1; }
 }
 
-.open-circle {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid var(--color-primary);
-  display: block;
+.press-dot-text {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--color-on-primary);
+  font-family: 'Inter', sans-serif;
+  pointer-events: none;
 }
 
-.mute-mark {
-  font-size: 18px;
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   color: var(--color-text-muted);
-  font-weight: 700;
-  line-height: 1;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.nav-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
+  min-width: 40px;
+  text-align: center;
 }
 
 .clear-btn {
