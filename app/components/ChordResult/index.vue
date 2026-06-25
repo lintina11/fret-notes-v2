@@ -12,6 +12,9 @@
             <p v-if="detectedChord.alternates.length" class="alternates">
               也可能是 {{ detectedChord.alternates.join('、') }}
             </p>
+            <p v-if="capoFret > 0" class="capo-shape">
+              形狀：{{ shapeLabel }} · Capo {{ capoFret }}
+            </p>
           </div>
 
           <div class="divider"></div>
@@ -34,6 +37,9 @@
       <Transition name="chord-fade" mode="out-in">
         <div :key="chordKey" class="result-inner">
           <p class="unrecognized-label">音集</p>
+          <p v-if="capoFret > 0" class="capo-shape">
+            形狀：{{ shapeLabel }} · Capo {{ capoFret }}
+          </p>
           <div class="notes-row">
             <div
               v-for="noteInfo in detectedChord.notes"
@@ -57,14 +63,22 @@
 import { computed } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 
-const { detectedChord } = useFretboard()
+const { detectedChord, shapeChord, capoFret } = useFretboard()
+
+const shapeLabel = computed(() => {
+  const s = shapeChord.value
+  if (!s) return ''
+  if (s.unrecognized) return '(音集)'
+  return `${s.root}${s.symbol}${s.bassNote ? '/' + s.bassNote : ''}`
+})
 
 const chordKey = computed(() => {
+  const capo = capoFret.value
   if (!detectedChord.value) return 'empty'
   if (detectedChord.value.unrecognized) {
-    return 'unknown:' + detectedChord.value.notes.map(n => n.noteName).join(',')
+    return `unknown:${detectedChord.value.notes.map(n => n.noteName).join(',')}:capo${capo}`
   }
-  return `${detectedChord.value.root}${detectedChord.value.symbol}${detectedChord.value.bassNote ?? ''}`
+  return `${detectedChord.value.root}${detectedChord.value.symbol}${detectedChord.value.bassNote ?? ''}:capo${capo}`
 })
 </script>
 
@@ -111,6 +125,13 @@ const chordKey = computed(() => {
   font-size: 13px;
   color: var(--color-text-muted);
   margin-top: 6px;
+}
+
+.capo-shape {
+  font-size: 13px;
+  color: var(--color-accent);
+  margin-top: 6px;
+  font-weight: 500;
 }
 
 .divider {
