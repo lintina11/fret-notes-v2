@@ -142,6 +142,7 @@
 
     <!-- Navigation row -->
     <div class="nav-row">
+      <span class="nav-label">Position</span>
       <button class="nav-btn" :disabled="startFret <= 1" @click="navigate(-1)">▲</button>
       <span class="nav-label">{{ startFret === 1 ? 'Open' : `${startFret}fr` }}</span>
       <button class="nav-btn" :disabled="startFret >= MAX_START_FRET" @click="navigate(1)">▼</button>
@@ -150,9 +151,9 @@
     <!-- Capo stepper -->
     <div class="capo-row">
       <span class="capo-label">Capo</span>
-      <button class="nav-btn" :disabled="capoFret <= 0" @click="setCapo(capoFret - 1)">▼</button>
+      <button class="nav-btn" :disabled="capoFret <= 0" @click="setCapo(capoFret - 1)">▲</button>
       <span class="nav-label">{{ capoFret === 0 ? 'Off' : capoFret }}</span>
-      <button class="nav-btn" :disabled="capoFret >= MAX_CAPO" @click="setCapo(capoFret + 1)">▲</button>
+      <button class="nav-btn" :disabled="capoFret >= MAX_CAPO" @click="setCapo(capoFret + 1)">▼</button>
     </div>
 
     <button class="clear-btn" @click="handleClear">清除</button>

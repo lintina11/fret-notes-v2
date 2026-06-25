@@ -40,6 +40,7 @@
           <p v-if="capoFret > 0" class="capo-shape">
             形狀：{{ shapeLabel }} · Capo {{ capoFret }}
           </p>
+          <div class="divider"></div>
           <div class="notes-row">
             <div
               v-for="noteInfo in detectedChord.notes"
