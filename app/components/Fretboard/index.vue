@@ -12,6 +12,14 @@
         class="string-marker"
         @click="toggleMute(s)"
       >
+        <!-- Transparent hit area for touch — expands target beyond small glyph -->
+        <rect
+          :x="sx(s) - STRING_GAP / 2"
+          :y="TOP_PAD - 32"
+          :width="STRING_GAP"
+          height="32"
+          fill="transparent"
+        />
         <text
           v-if="mutedStrings.has(s)"
           :x="sx(s)"
@@ -66,7 +74,7 @@
       />
 
       <!-- Layer 4: Position marker dots -->
-      <template v-for="(fretNum, idx) in displayFretNums" :key="`posdot-${fretNum}`">
+      <g v-for="(fretNum, idx) in displayFretNums" :key="`posdot-${fretNum}`">
         <circle
           v-if="POSITION_DOTS.includes(fretNum)"
           :cx="(sx(0) + sx(5)) / 2"
@@ -74,7 +82,30 @@
           r="4"
           class="position-dot"
         />
-      </template>
+      </g>
+
+      <!-- Layer 4b: Capo dim overlay (frets at/below the capo) -->
+      <rect
+        v-for="(fretNum, idx) in displayFretNums"
+        v-show="isDimmed(fretNum)"
+        :key="`dim-${fretNum}`"
+        :x="sx(0) - STRING_GAP / 2"
+        :y="TOP_PAD + idx * FRET_GAP"
+        :width="sx(5) - sx(0) + STRING_GAP"
+        :height="FRET_GAP"
+        class="capo-dim"
+      />
+
+      <!-- Layer 4c: Capo bar -->
+      <rect
+        v-if="capoRowIndex !== null"
+        :x="sx(0)"
+        :y="TOP_PAD + capoRowIndex * FRET_GAP + FRET_GAP / 2 - 4"
+        :width="sx(5) - sx(0)"
+        height="8"
+        rx="4"
+        class="capo-bar"
+      />
 
       <!-- Layer 1: Transparent click targets -->
       <rect
@@ -90,8 +121,8 @@
       />
 
       <!-- Layer 5: Pressed note dots -->
-      <template v-for="s in STRINGS" :key="`pressed-${s}`">
-        <template v-if="pressedFrets.has(s) && fretInDisplay(pressedFrets.get(s)!)">
+      <g v-for="s in STRINGS" :key="`pressed-${s}`">
+        <g v-if="pressedFrets.has(s) && fretInDisplay(pressedFrets.get(s)!)">
           <circle
             :cx="sx(s)"
             :cy="TOP_PAD + fretDisplayIndex(pressedFrets.get(s)!) * FRET_GAP + FRET_GAP / 2"
@@ -105,8 +136,8 @@
             dominant-baseline="middle"
             class="press-dot-text"
           >{{ noteNameAt(s, pressedFrets.get(s)!) }}</text>
-        </template>
-      </template>
+        </g>
+      </g>
     </svg>
 
     <!-- Navigation row -->
@@ -114,6 +145,14 @@
       <button class="nav-btn" :disabled="startFret <= 1" @click="navigate(-1)">▲</button>
       <span class="nav-label">{{ startFret === 1 ? 'Open' : `${startFret}fr` }}</span>
       <button class="nav-btn" :disabled="startFret >= MAX_START_FRET" @click="navigate(1)">▼</button>
+    </div>
+
+    <!-- Capo stepper -->
+    <div class="capo-row">
+      <span class="capo-label">Capo</span>
+      <button class="nav-btn" :disabled="capoFret <= 0" @click="setCapo(capoFret - 1)">▼</button>
+      <span class="nav-label">{{ capoFret === 0 ? 'Off' : capoFret }}</span>
+      <button class="nav-btn" :disabled="capoFret >= MAX_CAPO" @click="setCapo(capoFret + 1)">▲</button>
     </div>
 
     <button class="clear-btn" @click="handleClear">清除</button>
@@ -125,13 +164,14 @@ import { ref, computed } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
-const { pressedFrets, mutedStrings, toggleFret, toggleMute, clearAll } = useFretboard()
+const { pressedFrets, mutedStrings, capoFret, toggleFret, toggleMute, setCapo, clearAll } = useFretboard()
 
 // ── Layout constants ──────────────────────────────────────────────
 const STRINGS = [0, 1, 2, 3, 4, 5]
 const DISPLAY_FRETS = 5
 const MAX_START_FRET = 12 - DISPLAY_FRETS + 1  // 8
 const POSITION_DOTS = [3, 5, 7, 9, 12]
+const MAX_CAPO = 7
 
 const STRING_GAP = 28
 const FRET_GAP = 38
@@ -163,6 +203,7 @@ const clickCells = computed(() => {
   const cells: { s: number; fi: number }[] = []
   for (const s of STRINGS) {
     for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
+      if (isDimmed(displayFretNums.value[fi]!)) continue  // capo-blocked
       cells.push({ s, fi })
     }
   }
@@ -177,6 +218,18 @@ function fretDisplayIndex(fret: number): number {
   return fret - startFret.value
 }
 
+// True when a display row's fret number is at or below the capo (dimmed, non-clickable)
+function isDimmed(fretNum: number): boolean {
+  return fretNum <= capoFret.value
+}
+
+// The capo bar is shown only when the capo fret sits inside the current window
+const capoRowIndex = computed<number | null>(() => {
+  const c = capoFret.value
+  if (c < startFret.value || c > startFret.value + DISPLAY_FRETS - 1) return null
+  return c - startFret.value
+})
+
 // ── Navigation ────────────────────────────────────────────────────
 function navigate(dir: 1 | -1): void {
   const next = Math.min(MAX_START_FRET, Math.max(1, startFret.value + dir))
@@ -184,7 +237,7 @@ function navigate(dir: 1 | -1): void {
   startFret.value = next
   // Clear any pressed frets now outside the visible window
   for (const s of STRINGS) {
-    const fret = pressedFrets.get(s)
+    const fret = pressedFrets.value.get(s)
     if (fret !== undefined && !fretInDisplay(fret)) {
       toggleFret(s, fret)
     }
@@ -268,6 +321,7 @@ function handleClear(): void {
   animation: dot-in 0.08s ease;
   transform-box: fill-box;
   transform-origin: center;
+  pointer-events: none;
 }
 
 @keyframes dot-in {
@@ -320,6 +374,28 @@ function handleClear(): void {
   font-family: 'Inter', sans-serif;
   min-width: 40px;
   text-align: center;
+}
+
+.capo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.capo-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
+}
+
+.capo-dim {
+  fill: var(--color-border);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.capo-bar {
+  fill: var(--color-accent);
 }
 
 .clear-btn {
