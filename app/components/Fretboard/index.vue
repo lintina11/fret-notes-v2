@@ -240,17 +240,11 @@ const capoRowIndex = computed<number | null>(() => {
 })
 
 // ── Navigation ────────────────────────────────────────────────────
+// Scroll the visible 5-fret window only. Pressed notes live on the full
+// 12-fret board and are never dropped by scrolling — they just aren't drawn
+// while off-window. Only setCapo's transpose drops notes pushed past fret 12.
 function navigate(dir: 1 | -1): void {
-  const next = Math.min(MAX_START_FRET, Math.max(1, startFret.value + dir))
-  if (next === startFret.value) return
-  startFret.value = next
-  // Clear any pressed frets now outside the visible window
-  for (const s of STRINGS) {
-    const fret = pressedFrets.value.get(s)
-    if (fret !== undefined && !fretInDisplay(fret)) {
-      toggleFret(s, fret)
-    }
-  }
+  startFret.value = Math.min(MAX_START_FRET, Math.max(1, startFret.value + dir))
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
