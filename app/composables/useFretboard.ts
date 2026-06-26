@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { detectChord, type ChordResult } from '~~/core/music-theory/chord-detector'
-import { buildSelectedNotes } from '~~/core/music-theory/fretboard'
+import { buildSelectedNotes, transposePressedFrets, MAX_FRET } from '~~/core/music-theory/fretboard'
 
 // Singleton state — shared across all components
 const pressedFrets = ref(new Map<number, number>())  // stringIndex → absolute fret
@@ -41,17 +41,12 @@ function toggleMute(stringIndex: number): void {
 
 function setCapo(fret: number): void {
   const next = Math.min(MAX_CAPO, Math.max(0, fret))
+  const delta = next - capoFret.value
+  if (delta === 0) return
   capoFret.value = next
-  // Clear any pressed fret now at or below the capo (invalid positions)
-  let changed = false
-  for (const s of [...pressedFrets.value.keys()]) {
-    const f = pressedFrets.value.get(s)!
-    if (f <= next) {
-      pressedFrets.value.delete(s)
-      changed = true
-    }
-  }
-  if (changed) pressedFrets.value = new Map(pressedFrets.value)
+  // Capo and shape move together: shift every press by the same delta.
+  // Notes pushed past the last fret are dropped (lossy).
+  pressedFrets.value = transposePressedFrets(pressedFrets.value, delta, MAX_FRET)
 }
 
 function clearAll(): void {
