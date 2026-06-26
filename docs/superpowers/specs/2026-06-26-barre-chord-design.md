@@ -121,6 +121,12 @@ The thinnest string (index 5, 1st string) is always included.
 - Color language: **barre = `--color-primary`**, **capo = `--color-accent`** (capo bar
   unchanged). Two features, two colors.
 - Not drawn when scrolled out of the window (same as press dots).
+- **Note names on the bar:** each covered string that actually sounds *via the barre*
+  (covered, not muted, no higher press) shows its note name on the bar at that string's
+  position (`OPEN_STRINGS[s] + barreFret`). Use a **smaller** font than the press-dot
+  labels (it's fine for these to be smaller). A covered string with a higher press shows
+  its name on its own press dot instead — the bar carries no label there; a muted covered
+  string carries no label.
 
 ### Covered-string visuals
 

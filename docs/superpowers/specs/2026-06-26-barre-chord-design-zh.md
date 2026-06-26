@@ -82,6 +82,7 @@ const barreLength = ref(6)                    // 2–6，預設 6；錨定最細
 - 當 `barreFret` 在目前 5 格視窗內時，畫一條圓角矩形：從 `sx(startString)` 到 `sx(5)`，`startString = STRING_COUNT - barreLength`，在橫按列中央，填 `--color-primary`。
 - 顏色語言：**barre = `--color-primary`**、**capo = `--color-accent`**（capo bar 不變）。兩個功能、兩種色。
 - 捲動到視窗外不畫（同按壓點）。
+- **bar 上的音名：** 每條真正「透過橫按發聲」的被蓋住弦（被蓋住、未靜音、無更高按壓），在 bar 上該弦位置顯示其音名（`OPEN_STRINGS[s] + barreFret`）。字級比按壓點標示**小一點**（這些字小沒關係）。被蓋住但有更高按壓的弦，音名顯示在它自己的按壓點上、bar 在該處不放字；被靜音的被蓋住弦不放字。
 
 ### 被蓋住弦的視覺
 
