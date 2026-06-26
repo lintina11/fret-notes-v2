@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSelectedNotes } from '../../core/music-theory/fretboard'
+import { buildSelectedNotes, transposePressedFrets, MAX_FRET } from '../../core/music-theory/fretboard'
 import { detectChord } from '../../core/music-theory/chord-detector'
 
 // Helper: find the built note for a given string
@@ -63,5 +63,46 @@ describe('buildSelectedNotes', () => {
     expect(sounding).not.toBeNull()
     expect(sounding!.root).toBe('D')
     expect(sounding!.symbol).toBe('')
+  })
+})
+
+describe('transposePressedFrets', () => {
+  it('shifts all frets up by delta', () => {
+    const input = new Map<number, number>([[1, 3], [2, 5]])
+    const result = transposePressedFrets(input, 2, 12)
+    expect([...result.entries()].sort()).toEqual([[1, 5], [2, 7]])
+  })
+
+  it('shifts all frets down by delta', () => {
+    const result = transposePressedFrets(new Map([[1, 5]]), -1, 12)
+    expect(result.get(1)).toBe(4)
+  })
+
+  it('drops frets pushed above maxFret, keeps those at maxFret', () => {
+    const input = new Map<number, number>([[0, 11], [1, 10]])
+    const result = transposePressedFrets(input, 2, 12) // 11+2=13 dropped, 10+2=12 kept
+    expect(result.has(0)).toBe(false)
+    expect(result.get(1)).toBe(12)
+  })
+
+  it('returns an empty Map when every fret is pushed off the neck', () => {
+    const result = transposePressedFrets(new Map([[1, 12], [2, 11]]), 2, 12)
+    expect(result.size).toBe(0)
+  })
+
+  it('drops frets shifted below fret 1 (defensive)', () => {
+    const result = transposePressedFrets(new Map([[1, 1]]), -1, 12) // 1-1=0 < 1
+    expect(result.has(1)).toBe(false)
+  })
+
+  it('does not mutate the input Map and returns a new object', () => {
+    const input = new Map<number, number>([[1, 3]])
+    const result = transposePressedFrets(input, 2, 12)
+    expect(input.get(1)).toBe(3)   // unchanged
+    expect(result).not.toBe(input) // new object
+  })
+
+  it('exports MAX_FRET = 12', () => {
+    expect(MAX_FRET).toBe(12)
   })
 })
