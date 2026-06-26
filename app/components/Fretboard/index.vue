@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
@@ -199,6 +199,14 @@ const startFret = ref(1)
 const displayFretNums = computed<number[]>(() =>
   Array.from({ length: DISPLAY_FRETS }, (_, i) => startFret.value + i)
 )
+
+// Viewport follows the capo: shift the window by the same delta as the capo
+// so the capo bar and the shape stay at the same on-screen position. With no
+// manual Position scrolling this keeps startFret = capoFret + 1.
+watch(capoFret, (newCapo, oldCapo) => {
+  const delta = newCapo - oldCapo
+  startFret.value = Math.min(MAX_START_FRET, Math.max(1, startFret.value + delta))
+})
 
 const clickCells = computed(() => {
   const cells: { s: number; fi: number }[] = []
