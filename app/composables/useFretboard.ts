@@ -84,11 +84,12 @@ function toggleBarre(fret: number): void {
 }
 
 function setBarreLength(len: number): void {
-  barreLength.value = len
+  const next = Math.min(6, Math.max(2, len))
+  barreLength.value = next
   if (barreFret.value !== null) {
     pressedFrets.value = dropPressesAtOrBelow(
       pressedFrets.value,
-      barreCoveredStrings(len),
+      barreCoveredStrings(next),
       barreFret.value,
     )
   }

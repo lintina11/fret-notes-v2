@@ -222,9 +222,9 @@
     <!-- Barre length -->
     <div class="barre-row">
       <span class="capo-label">Barre</span>
-      <select class="barre-select" :value="barreLength" @change="onBarreLength">
-        <option v-for="n in [6, 5, 4, 3, 2]" :key="n" :value="n">{{ n }}</option>
-      </select>
+      <button class="nav-btn" :disabled="barreLength <= 2" @click="setBarreLength(barreLength - 1)">◀︎</button>
+      <span class="nav-label">{{ barreLength }}</span>
+      <button class="nav-btn" :disabled="barreLength >= 6" @click="setBarreLength(barreLength + 1)">▶︎</button>
     </div>
 
     <button class="clear-btn" @click="handleClear">清除</button>
@@ -379,10 +379,6 @@ const barreDimRows = computed<number[]>(() => {
 // A barre toggle is disabled on rows at or below the capo
 function barreToggleDisabled(fretNum: number): boolean {
   return fretNum <= capoFret.value
-}
-
-function onBarreLength(e: Event): void {
-  setBarreLength(Number((e.target as HTMLSelectElement).value))
 }
 
 // ── Navigation ────────────────────────────────────────────────────
@@ -564,7 +560,7 @@ function handleClear(): void {
 }
 
 .barre-toggle-text {
-  font-size: 11px;
+  font-size: 10px;
   fill: var(--color-text-muted);
   font-family: 'Inter', sans-serif;
 }
@@ -583,15 +579,6 @@ function handleClear(): void {
   gap: 12px;
 }
 
-.barre-select {
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 13px;
-  padding: 4px 8px;
-  cursor: pointer;
-}
 
 .clear-btn {
   padding: 8px 24px;
