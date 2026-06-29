@@ -121,11 +121,11 @@
       <!-- Layer 4d: Barre bar -->
       <rect
         v-if="barreRowIndex !== null"
-        :x="sx(barreStartString)"
-        :y="TOP_PAD + barreRowIndex * FRET_GAP + FRET_GAP / 2 - 4"
-        :width="sx(5) - sx(barreStartString)"
-        height="8"
-        rx="4"
+        :x="barreBarX"
+        :y="TOP_PAD + barreRowIndex * FRET_GAP + FRET_GAP / 2 - DOT_RADIUS"
+        :width="barreBarW"
+        :height="2 * DOT_RADIUS"
+        :rx="DOT_RADIUS"
         class="barre-bar"
       />
 
@@ -261,7 +261,9 @@ const OPEN_RADIUS = 7
 const BARRE_COL_W = 60
 const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 14   // text x
 const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
-const BARRE_DOT_R = 5
+const BARRE_DOT_R = 4
+// The bar extends past the outermost covered strings (string 1 always; string 6 at full length)
+const BARRE_OVERHANG = 9
 
 const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
 const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
@@ -322,6 +324,17 @@ const capoRowIndex = computed<number | null>(() => {
 
 // First covered (thickest) string index for the current barre length
 const barreStartString = computed<number>(() => 6 - barreLength.value)
+
+// Bar geometry: overhang past the outer strings — right always (string 1 is
+// always covered), left only at a full barre (string 6, index 0).
+const barreBarX = computed<number>(() => {
+  const leftOver = barreStartString.value === 0 ? BARRE_OVERHANG : 0
+  return sx(barreStartString.value) - leftOver
+})
+const barreBarW = computed<number>(() => {
+  const leftOver = barreStartString.value === 0 ? BARRE_OVERHANG : 0
+  return sx(5) + BARRE_OVERHANG - (sx(barreStartString.value) - leftOver)
+})
 
 // Row index of the barre within the window, or null when off-window
 const barreRowIndex = computed<number | null>(() => {
@@ -560,14 +573,11 @@ function handleClear(): void {
 }
 
 .barre-toggle-dot {
-  fill: var(--color-border);
-  stroke: var(--color-text-muted);
-  stroke-width: 1;
+  fill: var(--color-text-muted);
 }
 
 .barre-toggle-dot--on {
   fill: var(--color-primary);
-  stroke: var(--color-primary);
 }
 
 .barre-row {
