@@ -213,6 +213,14 @@ describe('buildSelectedNotes with a barre', () => {
     expect(noteFor(sounding, 3)!.midi).toBe(60) // 55 + 5, not 55 + 1
   })
 
+  it('covered string with a press exactly AT the barre fret sounds at the barre (not above)', () => {
+    // Pins the strict `> barre.fret` boundary: an equal press must NOT win.
+    const pressed = new Map<number, number>([[3, 2]])
+    const barre = { fret: 2, length: 6 }
+    const sounding = buildSelectedNotes(pressed, new Set(), 0, 'sounding', barre)
+    expect(noteFor(sounding, 3)!.midi).toBe(57) // 55 + 2 (barre fret), same as the press here
+  })
+
   it('no barre argument behaves exactly as before (open strings)', () => {
     const sounding = buildSelectedNotes(new Map(), new Set(), 0, 'sounding')
     expect(sounding).toHaveLength(6)
