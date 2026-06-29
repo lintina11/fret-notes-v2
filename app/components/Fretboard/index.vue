@@ -96,13 +96,13 @@
         class="capo-dim"
       />
 
-      <!-- Layer 4b-2: Barre dim overlay (covered-string cells below the barre) -->
+      <!-- Layer 4b-2: Barre dim overlay (full-width rows between capo and barre) -->
       <rect
-        v-for="cell in barreDimCells"
-        :key="`barredim-${cell.s}-${cell.fi}`"
-        :x="sx(cell.s) - STRING_GAP / 2"
-        :y="TOP_PAD + cell.fi * FRET_GAP"
-        :width="STRING_GAP"
+        v-for="fi in barreDimRows"
+        :key="`barredim-${fi}`"
+        :x="sx(0) - STRING_GAP / 2"
+        :y="TOP_PAD + fi * FRET_GAP"
+        :width="sx(5) - sx(0) + STRING_GAP"
         :height="FRET_GAP"
         class="capo-dim"
       />
@@ -295,7 +295,10 @@ const clickCells = computed(() => {
     for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
       const fretNum = displayFretNums.value[fi]!
       if (isDimmed(fretNum)) continue                              // capo-blocked
-      if (barreFret.value !== null && isBarred(s) && fretNum <= barreFret.value) continue  // behind the barre
+      if (barreFret.value !== null) {
+        if (fretNum < barreFret.value) continue                   // below the barre: all 6 strings blocked
+        if (isBarred(s) && fretNum === barreFret.value) continue  // covered string at the bar itself
+      }
       cells.push({ s, fi })
     }
   }
@@ -358,19 +361,19 @@ function isBarred(stringIndex: number): boolean {
   return barreFret.value !== null && stringIndex >= barreStartString.value
 }
 
-// Covered-string cells strictly below the barre fret, within the window —
-// dimmed and non-clickable (the finger already holds the string there).
-const barreDimCells = computed<{ s: number; fi: number }[]>(() => {
+// Full-width dim rows the barre blocks: frets between the capo and the barre.
+// The capo overlay already dims rows <= capo, so we only fill the gap
+// capoFret < fretNum < barreFret (no redundant overlap; full 6-string width,
+// independent of barre length).
+const barreDimRows = computed<number[]>(() => {
   const b = barreFret.value
   if (b === null) return []
-  const cells: { s: number; fi: number }[] = []
-  for (let s = barreStartString.value; s <= 5; s++) {
-    for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
-      const fretNum = displayFretNums.value[fi]!
-      if (fretNum < b) cells.push({ s, fi })
-    }
+  const rows: number[] = []
+  for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
+    const fretNum = displayFretNums.value[fi]!
+    if (fretNum > capoFret.value && fretNum < b) rows.push(fi)
   }
-  return cells
+  return rows
 })
 
 // A barre toggle is disabled on rows at or below the capo
