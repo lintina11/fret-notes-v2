@@ -107,6 +107,58 @@
         class="capo-bar"
       />
 
+      <!-- Layer 4d: Barre bar -->
+      <rect
+        v-if="barreRowIndex !== null"
+        :x="sx(barreStartString)"
+        :y="TOP_PAD + barreRowIndex * FRET_GAP + FRET_GAP / 2 - 4"
+        :width="sx(5) - sx(barreStartString)"
+        height="8"
+        rx="4"
+        class="barre-bar"
+      />
+
+      <!-- Layer 4e: Barre per-string note names -->
+      <text
+        v-for="label in barreNoteLabels"
+        :key="`barrelabel-${label.s}`"
+        :x="sx(label.s)"
+        :y="TOP_PAD + (barreRowIndex ?? 0) * FRET_GAP + FRET_GAP / 2"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        class="barre-label-text"
+      >{{ label.name }}</text>
+
+      <!-- Layer 7: Barre toggle column (per visible fret row) -->
+      <g
+        v-for="(fretNum, idx) in displayFretNums"
+        :key="`barretoggle-${fretNum}`"
+        v-show="!barreToggleDisabled(fretNum)"
+        class="barre-toggle"
+        @click="toggleBarre(fretNum)"
+      >
+        <rect
+          :x="BARRE_LABEL_X - 4"
+          :y="TOP_PAD + idx * FRET_GAP"
+          :width="BARRE_COL_W - 10"
+          :height="FRET_GAP"
+          fill="transparent"
+        />
+        <text
+          :x="BARRE_LABEL_X"
+          :y="TOP_PAD + idx * FRET_GAP + FRET_GAP / 2"
+          dominant-baseline="middle"
+          class="barre-toggle-text"
+        >封閉</text>
+        <circle
+          :cx="BARRE_DOT_X"
+          :cy="TOP_PAD + idx * FRET_GAP + FRET_GAP / 2"
+          :r="BARRE_DOT_R"
+          class="barre-toggle-dot"
+          :class="{ 'barre-toggle-dot--on': barreFret === fretNum }"
+        />
+      </g>
+
       <!-- Layer 1: Transparent click targets -->
       <rect
         v-for="cell in clickCells"
@@ -156,6 +208,14 @@
       <button class="nav-btn" :disabled="capoFret >= MAX_CAPO" @click="setCapo(capoFret + 1)">▼</button>
     </div>
 
+    <!-- Barre length -->
+    <div class="barre-row">
+      <span class="capo-label">Barre</span>
+      <select class="barre-select" :value="barreLength" @change="onBarreLength">
+        <option v-for="n in [6, 5, 4, 3, 2]" :key="n" :value="n">{{ n }}</option>
+      </select>
+    </div>
+
     <button class="clear-btn" @click="handleClear">清除</button>
   </div>
 </template>
@@ -165,7 +225,10 @@ import { ref, computed, watch } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
-const { pressedFrets, mutedStrings, capoFret, toggleFret, toggleMute, setCapo, clearAll } = useFretboard()
+const {
+  pressedFrets, mutedStrings, capoFret, barreFret, barreLength,
+  toggleFret, toggleMute, setCapo, toggleBarre, setBarreLength, clearAll,
+} = useFretboard()
 
 // ── Layout constants ──────────────────────────────────────────────
 const STRINGS = [0, 1, 2, 3, 4, 5]
@@ -177,14 +240,19 @@ const MAX_CAPO = 7
 const STRING_GAP = 28
 const FRET_GAP = 38
 const LEFT_PAD = 28
-const RIGHT_PAD = 16
 const TOP_PAD = 50
 const BOTTOM_PAD = 22
 const NUT_THICKNESS = 5
 const DOT_RADIUS = 13
 const OPEN_RADIUS = 7
 
-const SVG_W = LEFT_PAD + 5 * STRING_GAP + RIGHT_PAD   // 184
+// Right-hand column holds the per-row 「封閉」 barre toggles.
+const BARRE_COL_W = 60
+const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 14   // text x
+const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
+const BARRE_DOT_R = 5
+
+const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
 const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
 
 // Pre-computed fret line indices: 0, 1, 2, 3, 4, 5
@@ -239,6 +307,41 @@ const capoRowIndex = computed<number | null>(() => {
   return c - startFret.value
 })
 
+// First covered (thickest) string index for the current barre length
+const barreStartString = computed<number>(() => 6 - barreLength.value)
+
+// Row index of the barre within the window, or null when off-window
+const barreRowIndex = computed<number | null>(() => {
+  const b = barreFret.value
+  if (b === null || b < startFret.value || b > startFret.value + DISPLAY_FRETS - 1) return null
+  return b - startFret.value
+})
+
+// Note name for each covered string that actually sounds via the barre
+// (covered, not muted, no higher press). Strings with a higher press show
+// their name on their own press dot instead.
+const barreNoteLabels = computed<{ s: number; name: string }[]>(() => {
+  const b = barreFret.value
+  if (b === null || barreRowIndex.value === null) return []
+  const out: { s: number; name: string }[] = []
+  for (let s = barreStartString.value; s <= 5; s++) {
+    if (mutedStrings.value.has(s)) continue
+    const press = pressedFrets.value.get(s)
+    if (press !== undefined && press > b) continue
+    out.push({ s, name: noteNameAt(s, b) })
+  }
+  return out
+})
+
+// A barre toggle is disabled on rows at or below the capo
+function barreToggleDisabled(fretNum: number): boolean {
+  return fretNum <= capoFret.value
+}
+
+function onBarreLength(e: Event): void {
+  setBarreLength(Number((e.target as HTMLSelectElement).value))
+}
+
 // ── Navigation ────────────────────────────────────────────────────
 // Scroll the visible 5-fret window only. Pressed notes live on the full
 // 12-fret board and are never dropped by scrolling — they just aren't drawn
@@ -269,7 +372,7 @@ function handleClear(): void {
 
 .chord-svg {
   width: 100%;
-  max-width: 240px;
+  max-width: 300px;
   height: auto;
   overflow: visible;
 }
@@ -399,6 +502,55 @@ function handleClear(): void {
 
 .capo-bar {
   fill: var(--color-accent);
+}
+
+.barre-bar {
+  fill: var(--color-primary);
+}
+
+.barre-label-text {
+  font-size: 8px;
+  font-weight: 600;
+  fill: var(--color-on-primary);
+  font-family: 'Inter', sans-serif;
+  pointer-events: none;
+}
+
+.barre-toggle {
+  cursor: pointer;
+}
+
+.barre-toggle-text {
+  font-size: 11px;
+  fill: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
+}
+
+.barre-toggle-dot {
+  fill: var(--color-border);
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+}
+
+.barre-toggle-dot--on {
+  fill: var(--color-primary);
+  stroke: var(--color-primary);
+}
+
+.barre-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barre-select {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
 }
 
 .clear-btn {
