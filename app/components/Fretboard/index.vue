@@ -29,7 +29,7 @@
           class="mute-text"
         >×</text>
         <circle
-          v-else-if="!pressedFrets.has(s)"
+          v-else-if="!pressedFrets.has(s) && !isBarred(s)"
           :cx="sx(s)"
           :cy="TOP_PAD - 14"
           :r="OPEN_RADIUS"
@@ -92,6 +92,17 @@
         :x="sx(0) - STRING_GAP / 2"
         :y="TOP_PAD + idx * FRET_GAP"
         :width="sx(5) - sx(0) + STRING_GAP"
+        :height="FRET_GAP"
+        class="capo-dim"
+      />
+
+      <!-- Layer 4b-2: Barre dim overlay (covered-string cells below the barre) -->
+      <rect
+        v-for="cell in barreDimCells"
+        :key="`barredim-${cell.s}-${cell.fi}`"
+        :x="sx(cell.s) - STRING_GAP / 2"
+        :y="TOP_PAD + cell.fi * FRET_GAP"
+        :width="STRING_GAP"
         :height="FRET_GAP"
         class="capo-dim"
       />
@@ -280,7 +291,9 @@ const clickCells = computed(() => {
   const cells: { s: number; fi: number }[] = []
   for (const s of STRINGS) {
     for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
-      if (isDimmed(displayFretNums.value[fi]!)) continue  // capo-blocked
+      const fretNum = displayFretNums.value[fi]!
+      if (isDimmed(fretNum)) continue                              // capo-blocked
+      if (barreFret.value !== null && isBarred(s) && fretNum <= barreFret.value) continue  // behind the barre
       cells.push({ s, fi })
     }
   }
@@ -331,6 +344,26 @@ const barreNoteLabels = computed<{ s: number; name: string }[]>(() => {
     out.push({ s, name: noteNameAt(s, b) })
   }
   return out
+})
+
+// Is this string covered by the current barre?
+function isBarred(stringIndex: number): boolean {
+  return barreFret.value !== null && stringIndex >= barreStartString.value
+}
+
+// Covered-string cells strictly below the barre fret, within the window —
+// dimmed and non-clickable (the finger already holds the string there).
+const barreDimCells = computed<{ s: number; fi: number }[]>(() => {
+  const b = barreFret.value
+  if (b === null) return []
+  const cells: { s: number; fi: number }[] = []
+  for (let s = barreStartString.value; s <= 5; s++) {
+    for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
+      const fretNum = displayFretNums.value[fi]!
+      if (fretNum < b) cells.push({ s, fi })
+    }
+  }
+  return cells
 })
 
 // A barre toggle is disabled on rows at or below the capo
