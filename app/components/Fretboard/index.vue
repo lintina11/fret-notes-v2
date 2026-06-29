@@ -262,7 +262,7 @@ const BARRE_COL_W = 60
 const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 14   // text x
 const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
 const BARRE_DOT_R = 4
-// The bar extends past the outermost covered strings (string 1 always; string 6 at full length)
+// The bar extends past its covered strings on both ends, at any barre length
 const BARRE_OVERHANG = 9
 
 const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
@@ -325,16 +325,10 @@ const capoRowIndex = computed<number | null>(() => {
 // First covered (thickest) string index for the current barre length
 const barreStartString = computed<number>(() => 6 - barreLength.value)
 
-// Bar geometry: overhang past the outer strings — right always (string 1 is
-// always covered), left only at a full barre (string 6, index 0).
-const barreBarX = computed<number>(() => {
-  const leftOver = barreStartString.value === 0 ? BARRE_OVERHANG : 0
-  return sx(barreStartString.value) - leftOver
-})
-const barreBarW = computed<number>(() => {
-  const leftOver = barreStartString.value === 0 ? BARRE_OVERHANG : 0
-  return sx(5) + BARRE_OVERHANG - (sx(barreStartString.value) - leftOver)
-})
+// Bar geometry: overhang past the covered strings on BOTH ends, at any length,
+// so the bar always reads as a finger pressing across (never ends flush on a string).
+const barreBarX = computed<number>(() => sx(barreStartString.value) - BARRE_OVERHANG)
+const barreBarW = computed<number>(() => sx(5) - sx(barreStartString.value) + 2 * BARRE_OVERHANG)
 
 // Row index of the barre within the window, or null when off-window
 const barreRowIndex = computed<number | null>(() => {
