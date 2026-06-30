@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { buildSelectedNotes, transposePressedFrets, MAX_FRET } from '../../core/music-theory/fretboard'
+import {
+  buildSelectedNotes,
+  transposePressedFrets,
+  transposeBarre,
+  barreCoveredStrings,
+  isStringBarred,
+  dropPressesAtOrBelow,
+  MAX_FRET,
+  STRING_COUNT,
+} from '../../core/music-theory/fretboard'
 import { detectChord } from '../../core/music-theory/chord-detector'
 
 // Helper: find the built note for a given string
@@ -104,5 +113,117 @@ describe('transposePressedFrets', () => {
 
   it('exports MAX_FRET = 12', () => {
     expect(MAX_FRET).toBe(12)
+  })
+})
+
+describe('barreCoveredStrings', () => {
+  it('length 6 covers all strings 0-5', () => {
+    expect(barreCoveredStrings(6)).toEqual([0, 1, 2, 3, 4, 5])
+  })
+  it('length 5 covers strings 1-5 (drops low E)', () => {
+    expect(barreCoveredStrings(5)).toEqual([1, 2, 3, 4, 5])
+  })
+  it('length 2 covers strings 4-5 (two thinnest)', () => {
+    expect(barreCoveredStrings(2)).toEqual([4, 5])
+  })
+})
+
+describe('isStringBarred', () => {
+  it('null barre → never barred', () => {
+    expect(isStringBarred(0, null)).toBe(false)
+  })
+  it('length 5 barre: string 0 not barred, string 1 barred', () => {
+    const barre = { fret: 2, length: 5 }
+    expect(isStringBarred(0, barre)).toBe(false)
+    expect(isStringBarred(1, barre)).toBe(true)
+    expect(isStringBarred(5, barre)).toBe(true)
+  })
+})
+
+describe('dropPressesAtOrBelow', () => {
+  it('removes covered-string presses at or below the fret, keeps the rest', () => {
+    const pressed = new Map<number, number>([[1, 1], [2, 5], [0, 1]])
+    // covered = strings 1..5 (length 5); fret = 1
+    const result = dropPressesAtOrBelow(pressed, [1, 2, 3, 4, 5], 1)
+    expect(result.has(1)).toBe(false) // 1 <= 1 on covered string → dropped
+    expect(result.get(2)).toBe(5)     // 5 > 1 → kept
+    expect(result.get(0)).toBe(1)     // string 0 not covered → kept
+  })
+  it('returns a new Map; input is not mutated', () => {
+    const pressed = new Map<number, number>([[5, 1]])
+    const result = dropPressesAtOrBelow(pressed, [5], 1)
+    expect(result.has(5)).toBe(false)
+    expect(pressed.get(5)).toBe(1)
+  })
+})
+
+describe('transposeBarre', () => {
+  it('shifts up within range', () => {
+    expect(transposeBarre(1, 2, 12)).toBe(3)
+  })
+  it('returns null when pushed past maxFret', () => {
+    expect(transposeBarre(11, 2, 12)).toBeNull()
+  })
+  it('returns null when pushed below fret 1', () => {
+    expect(transposeBarre(1, -1, 12)).toBeNull()
+  })
+})
+
+describe('buildSelectedNotes with a barre', () => {
+  it('full F barre (fret 1, length 6) + E-shape fingers → F major sounding', () => {
+    // E-shape F: low-E barre, A=3, D=3, G=2, B barre, high-E barre
+    const pressed = new Map<number, number>([[1, 3], [2, 3], [3, 2]])
+    const barre = { fret: 1, length: 6 }
+    const sounding = buildSelectedNotes(pressed, new Set(), 0, 'sounding', barre)
+    // string 0 sounds at the barre fret 1 → 40+1 = 41 (F)
+    expect(noteFor(sounding, 0)!.midi).toBe(41)
+    // string 1 has a higher press (3) → 45+3 = 48 (C), not the barre
+    expect(noteFor(sounding, 1)!.midi).toBe(48)
+    const chord = detectChord(sounding)
+    expect(chord).not.toBeNull()
+    expect(chord!.root).toBe('F')
+    expect(chord!.symbol).toBe('')
+  })
+
+  it('partial barre (fret 2, length 5): strings 1-5 barred, string 0 stays open', () => {
+    const barre = { fret: 2, length: 5 }
+    const sounding = buildSelectedNotes(new Map(), new Set(), 0, 'sounding', barre)
+    expect(noteFor(sounding, 0)!.midi).toBe(40)      // open low E
+    expect(noteFor(sounding, 1)!.midi).toBe(47)      // 45 + 2
+    expect(sounding).toHaveLength(6)
+  })
+
+  it('barre + capo in shape mode: covered string sounds at barre.fret - capoFret', () => {
+    const barre = { fret: 3, length: 6 }
+    const shape = buildSelectedNotes(new Map(), new Set(), 2, 'shape', barre)
+    // string 0 shape = 40 + (3 - 2) = 41
+    expect(noteFor(shape, 0)!.midi).toBe(41)
+  })
+
+  it('muted covered string is excluded even under a barre', () => {
+    const barre = { fret: 1, length: 6 }
+    const sounding = buildSelectedNotes(new Map(), new Set([5]), 0, 'sounding', barre)
+    expect(noteFor(sounding, 5)).toBeUndefined()
+  })
+
+  it('covered string with a higher press sounds at the press, not the barre', () => {
+    const pressed = new Map<number, number>([[3, 5]])
+    const barre = { fret: 1, length: 6 }
+    const sounding = buildSelectedNotes(pressed, new Set(), 0, 'sounding', barre)
+    expect(noteFor(sounding, 3)!.midi).toBe(60) // 55 + 5, not 55 + 1
+  })
+
+  it('covered string with a press exactly AT the barre fret sounds at the barre (not above)', () => {
+    // Pins the strict `> barre.fret` boundary: an equal press must NOT win.
+    const pressed = new Map<number, number>([[3, 2]])
+    const barre = { fret: 2, length: 6 }
+    const sounding = buildSelectedNotes(pressed, new Set(), 0, 'sounding', barre)
+    expect(noteFor(sounding, 3)!.midi).toBe(57) // 55 + 2 (barre fret), same as the press here
+  })
+
+  it('no barre argument behaves exactly as before (open strings)', () => {
+    const sounding = buildSelectedNotes(new Map(), new Set(), 0, 'sounding')
+    expect(sounding).toHaveLength(6)
+    expect(noteFor(sounding, 0)!.midi).toBe(40)
   })
 })

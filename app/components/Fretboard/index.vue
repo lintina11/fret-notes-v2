@@ -29,7 +29,7 @@
           class="mute-text"
         >×</text>
         <circle
-          v-else-if="!pressedFrets.has(s)"
+          v-else-if="!pressedFrets.has(s) && !isBarred(s)"
           :cx="sx(s)"
           :cy="TOP_PAD - 14"
           :r="OPEN_RADIUS"
@@ -96,6 +96,17 @@
         class="capo-dim"
       />
 
+      <!-- Layer 4b-2: Barre dim overlay (full-width rows between capo and barre) -->
+      <rect
+        v-for="fi in barreDimRows"
+        :key="`barredim-${fi}`"
+        :x="sx(0) - STRING_GAP / 2"
+        :y="TOP_PAD + fi * FRET_GAP"
+        :width="sx(5) - sx(0) + STRING_GAP"
+        :height="FRET_GAP"
+        class="capo-dim"
+      />
+
       <!-- Layer 4c: Capo bar -->
       <rect
         v-if="capoRowIndex !== null"
@@ -106,6 +117,51 @@
         rx="4"
         class="capo-bar"
       />
+
+      <!-- Layer 4d: Barre bar -->
+      <rect
+        v-if="barreRowIndex !== null"
+        :x="barreBarX"
+        :y="TOP_PAD + barreRowIndex * FRET_GAP + FRET_GAP / 2 - DOT_RADIUS"
+        :width="barreBarW"
+        :height="2 * DOT_RADIUS"
+        :rx="DOT_RADIUS"
+        class="barre-bar"
+      />
+
+      <!-- Layer 4e: Barre per-string note names -->
+      <text
+        v-for="label in barreNoteLabels"
+        :key="`barrelabel-${label.s}`"
+        :x="sx(label.s)"
+        :y="TOP_PAD + (barreRowIndex ?? 0) * FRET_GAP + FRET_GAP / 2"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        class="barre-label-text"
+      >{{ label.name }}</text>
+
+      <!-- Layer 7: Barre toggle column (per visible fret row) -->
+      <g
+        v-for="(fretNum, idx) in displayFretNums"
+        :key="`barretoggle-${fretNum}`"
+        v-show="!barreToggleDisabled(fretNum)"
+        class="barre-toggle"
+        @click="toggleBarre(fretNum)"
+      >
+        <rect
+          :x="BARRE_LABEL_X - 4"
+          :y="TOP_PAD + idx * FRET_GAP"
+          :width="BARRE_COL_W - 10"
+          :height="FRET_GAP"
+          fill="transparent"
+        />
+        <text
+          :x="BARRE_LABEL_X"
+          :y="TOP_PAD + idx * FRET_GAP + FRET_GAP / 2"
+          dominant-baseline="middle"
+          class="barre-toggle-text"
+        >封閉</text>
+      </g>
 
       <!-- Layer 1: Transparent click targets -->
       <rect
@@ -165,7 +221,10 @@ import { ref, computed, watch } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
 import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
-const { pressedFrets, mutedStrings, capoFret, toggleFret, toggleMute, setCapo, clearAll } = useFretboard()
+const {
+  pressedFrets, mutedStrings, capoFret, barreFret, barreLength,
+  toggleFret, toggleMute, setCapo, toggleBarre, clearAll,
+} = useFretboard()
 
 // ── Layout constants ──────────────────────────────────────────────
 const STRINGS = [0, 1, 2, 3, 4, 5]
@@ -177,14 +236,21 @@ const MAX_CAPO = 7
 const STRING_GAP = 28
 const FRET_GAP = 38
 const LEFT_PAD = 28
-const RIGHT_PAD = 16
 const TOP_PAD = 50
 const BOTTOM_PAD = 22
 const NUT_THICKNESS = 5
 const DOT_RADIUS = 13
 const OPEN_RADIUS = 7
 
-const SVG_W = LEFT_PAD + 5 * STRING_GAP + RIGHT_PAD   // 184
+// Right-hand column holds the per-row 「封閉」 barre toggles.
+const BARRE_COL_W = 60
+const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 20  // text x
+const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
+const BARRE_DOT_R = 2
+// The bar extends past its covered strings on both ends, at any barre length
+const BARRE_OVERHANG = 13
+
+const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
 const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
 
 // Pre-computed fret line indices: 0, 1, 2, 3, 4, 5
@@ -212,7 +278,12 @@ const clickCells = computed(() => {
   const cells: { s: number; fi: number }[] = []
   for (const s of STRINGS) {
     for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
-      if (isDimmed(displayFretNums.value[fi]!)) continue  // capo-blocked
+      const fretNum = displayFretNums.value[fi]!
+      if (isDimmed(fretNum)) continue                              // capo-blocked
+      if (barreFret.value !== null) {
+        if (fretNum < barreFret.value) continue                   // below the barre: all 6 strings blocked
+        if (isBarred(s) && fretNum === barreFret.value) continue  // covered string at the bar itself
+      }
       cells.push({ s, fi })
     }
   }
@@ -239,6 +310,62 @@ const capoRowIndex = computed<number | null>(() => {
   return c - startFret.value
 })
 
+// First covered (thickest) string index for the current barre length
+const barreStartString = computed<number>(() => 6 - barreLength.value)
+
+// Bar geometry: overhang past the covered strings on BOTH ends, at any length,
+// so the bar always reads as a finger pressing across (never ends flush on a string).
+const barreBarX = computed<number>(() => sx(barreStartString.value) - BARRE_OVERHANG)
+const barreBarW = computed<number>(() => sx(5) - sx(barreStartString.value) + 2 * BARRE_OVERHANG)
+
+// Row index of the barre within the window, or null when off-window
+const barreRowIndex = computed<number | null>(() => {
+  const b = barreFret.value
+  if (b === null || b < startFret.value || b > startFret.value + DISPLAY_FRETS - 1) return null
+  return b - startFret.value
+})
+
+// Note name for each covered string that actually sounds via the barre
+// (covered, not muted, no higher press). Strings with a higher press show
+// their name on their own press dot instead.
+const barreNoteLabels = computed<{ s: number; name: string }[]>(() => {
+  const b = barreFret.value
+  if (b === null || barreRowIndex.value === null) return []
+  const out: { s: number; name: string }[] = []
+  for (let s = barreStartString.value; s <= 5; s++) {
+    if (mutedStrings.value.has(s)) continue
+    const press = pressedFrets.value.get(s)
+    if (press !== undefined && press > b) continue
+    out.push({ s, name: noteNameAt(s, b) })
+  }
+  return out
+})
+
+// Is this string covered by the current barre?
+function isBarred(stringIndex: number): boolean {
+  return barreFret.value !== null && stringIndex >= barreStartString.value
+}
+
+// Full-width dim rows the barre blocks: frets between the capo and the barre.
+// The capo overlay already dims rows <= capo, so we only fill the gap
+// capoFret < fretNum < barreFret (no redundant overlap; full 6-string width,
+// independent of barre length).
+const barreDimRows = computed<number[]>(() => {
+  const b = barreFret.value
+  if (b === null) return []
+  const rows: number[] = []
+  for (let fi = 0; fi < DISPLAY_FRETS; fi++) {
+    const fretNum = displayFretNums.value[fi]!
+    if (fretNum > capoFret.value && fretNum < b) rows.push(fi)
+  }
+  return rows
+})
+
+// A barre toggle is disabled on rows at or below the capo
+function barreToggleDisabled(fretNum: number): boolean {
+  return fretNum <= capoFret.value
+}
+
 // ── Navigation ────────────────────────────────────────────────────
 // Scroll the visible 5-fret window only. Pressed notes live on the full
 // 12-fret board and are never dropped by scrolling — they just aren't drawn
@@ -263,13 +390,13 @@ function handleClear(): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   padding: 16px;
 }
 
 .chord-svg {
   width: 100%;
-  max-width: 240px;
+  max-width: 300px;
   height: auto;
   overflow: visible;
 }
@@ -399,6 +526,28 @@ function handleClear(): void {
 
 .capo-bar {
   fill: var(--color-accent);
+}
+
+.barre-bar {
+  fill: var(--color-primary);
+}
+
+.barre-label-text {
+  font-size: 8px;
+  font-weight: 600;
+  fill: var(--color-on-primary);
+  font-family: 'Inter', sans-serif;
+  pointer-events: none;
+}
+
+.barre-toggle {
+  cursor: pointer;
+}
+
+.barre-toggle-text {
+  font-size: 10px;
+  fill: var(--color-text-muted);
+  font-family: 'Inter', sans-serif;
 }
 
 .clear-btn {
