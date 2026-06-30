@@ -219,14 +219,6 @@
       <button class="nav-btn" :disabled="capoFret >= MAX_CAPO" @click="setCapo(capoFret + 1)">▼</button>
     </div>
 
-    <!-- Barre length -->
-    <div class="barre-row">
-      <span class="capo-label">Barre</span>
-      <button class="nav-btn" :disabled="barreLength <= 2" @click="setBarreLength(barreLength - 1)">◀︎</button>
-      <span class="nav-label">{{ barreLength }}</span>
-      <button class="nav-btn" :disabled="barreLength >= 6" @click="setBarreLength(barreLength + 1)">▶︎</button>
-    </div>
-
     <button class="clear-btn" @click="handleClear">清除</button>
   </div>
 </template>
@@ -238,7 +230,7 @@ import { midiToNoteName, OPEN_STRINGS } from '~~/core/music-theory/notes'
 
 const {
   pressedFrets, mutedStrings, capoFret, barreFret, barreLength,
-  toggleFret, toggleMute, setCapo, toggleBarre, setBarreLength, clearAll,
+  toggleFret, toggleMute, setCapo, toggleBarre, clearAll,
 } = useFretboard()
 
 // ── Layout constants ──────────────────────────────────────────────
@@ -261,7 +253,7 @@ const OPEN_RADIUS = 7
 const BARRE_COL_W = 60
 const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 14   // text x
 const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
-const BARRE_DOT_R = 4
+const BARRE_DOT_R = 2
 // The bar extends past its covered strings on both ends, at any barre length
 const BARRE_OVERHANG = 9
 
@@ -405,7 +397,7 @@ function handleClear(): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   padding: 16px;
 }
 
@@ -572,13 +564,6 @@ function handleClear(): void {
 .barre-toggle-dot--on {
   fill: var(--color-primary);
 }
-
-.barre-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 
 .clear-btn {
   padding: 8px 24px;

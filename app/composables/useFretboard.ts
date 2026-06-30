@@ -67,20 +67,24 @@ function setCapo(fret: number): void {
   }
 }
 
-// Toggle the barre at `fret`. Re-tapping the same fret removes it; tapping a
-// new fret moves the (single) barre there and drops covered-string presses at
-// or below the barre fret (they cannot sound behind the barre).
+// Toggle the barre at `fret`.
+// - Different fret (or no barre): activate at `fret` with length 6.
+// - Same fret, length > 2: shrink by 1 (6 → 5 → 4 → 3 → 2).
+// - Same fret, length === 2: remove the barre.
 function toggleBarre(fret: number): void {
-  if (barreFret.value === fret) {
+  if (barreFret.value !== fret) {
+    barreFret.value = fret
+    barreLength.value = 6
+    pressedFrets.value = dropPressesAtOrBelow(
+      pressedFrets.value,
+      barreCoveredStrings(6),
+      fret,
+    )
+  } else if (barreLength.value > 2) {
+    setBarreLength(barreLength.value - 1)
+  } else {
     barreFret.value = null
-    return
   }
-  barreFret.value = fret
-  pressedFrets.value = dropPressesAtOrBelow(
-    pressedFrets.value,
-    barreCoveredStrings(barreLength.value),
-    fret,
-  )
 }
 
 function setBarreLength(len: number): void {
