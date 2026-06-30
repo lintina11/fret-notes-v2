@@ -1,0 +1,200 @@
+// ── Variables ─────────────────────────────────────────────────────
+$font-inter: 'Inter', sans-serif;
+$transition-ui: border-color 0.15s, color 0.15s;
+
+@mixin inter-text($size, $weight: null) {
+  font-family: $font-inter;
+  font-size: $size;
+
+  @if $weight {
+    font-weight: $weight;
+  }
+}
+
+@mixin hover-primary-border {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+// ── Layout ────────────────────────────────────────────────────────
+.chord-diagram-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+}
+
+.chord-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  overflow: visible;
+}
+
+// ── String markers ──────────────────────────────────────────────────
+.string-marker {
+  cursor: pointer;
+}
+
+.mute-text {
+  @include inter-text(14px, 700);
+  fill: var(--color-text-muted);
+}
+
+.open-circle-svg {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+}
+
+// ── Fretboard grid ──────────────────────────────────────────────────
+.nut {
+  fill: var(--color-text);
+}
+
+.fret-label-text {
+  @include inter-text(10px);
+  fill: var(--color-text-muted);
+}
+
+.string-line {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.fret-line {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.position-dot {
+  fill: var(--color-border);
+}
+
+// ── Press interactions ──────────────────────────────────────────────
+.cell-target {
+  cursor: pointer;
+}
+
+.press-dot-circle {
+  fill: var(--color-primary);
+  animation: dot-in 0.08s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+@keyframes dot-in {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.press-dot-text {
+  @include inter-text(10px, 600);
+  fill: var(--color-on-primary);
+  pointer-events: none;
+}
+
+// ── Navigation ──────────────────────────────────────────────────────
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $transition-ui;
+
+  &:hover:not(:disabled) {
+    @include hover-primary-border;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+}
+
+.nav-label {
+  @include inter-text(12px);
+  color: var(--color-text-muted);
+  min-width: 40px;
+  text-align: center;
+}
+
+// ── Capo ────────────────────────────────────────────────────────────
+.capo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.capo-label {
+  @include inter-text(12px);
+  color: var(--color-text-muted);
+}
+
+.capo-dim {
+  fill: var(--color-border);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.capo-bar {
+  fill: var(--color-accent);
+}
+
+// ── Barre ───────────────────────────────────────────────────────────
+.barre-bar {
+  fill: var(--color-primary);
+}
+
+.barre-label-text {
+  @include inter-text(8px, 600);
+  fill: var(--color-on-primary);
+  pointer-events: none;
+}
+
+.barre-toggle {
+  cursor: pointer;
+}
+
+.barre-toggle-text {
+  @include inter-text(10px);
+  fill: var(--color-text-muted);
+}
+
+// ── Actions ─────────────────────────────────────────────────────────
+.clear-btn {
+  padding: 8px 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: $transition-ui;
+
+  &:hover {
+    @include hover-primary-border;
+  }
+}
