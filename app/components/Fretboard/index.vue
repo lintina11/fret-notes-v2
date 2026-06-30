@@ -198,7 +198,7 @@
 
     <!-- Navigation row -->
     <div class="nav-row">
-      <span class="nav-label">Position</span>
+      <span class="nav-label">View</span>
       <button class="nav-btn" :disabled="startFret <= 1" @click="navigate(-1)">▲</button>
       <span class="nav-label">{{ startFret === 1 ? 'Open' : `${startFret}fr` }}</span>
       <button class="nav-btn" :disabled="startFret >= MAX_START_FRET" @click="navigate(1)">▼</button>
