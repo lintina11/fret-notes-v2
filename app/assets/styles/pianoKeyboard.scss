@@ -24,11 +24,22 @@ $key-white-height: 100px;
   box-shadow: var(--shadow-card);
 }
 
+// Clips/centres the scaled keyboard; its height is set inline to the scaled
+// keyboard height so the range label sits flush beneath.
+.piano-viewport {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
 .piano {
   position: relative;
   display: flex;
   align-items: flex-start;
   height: $key-white-height;
+  flex: none;            // keep natural width; we scale via transform
+  transform-origin: top center;
 }
 
 // ── Keys ──────────────────────────────────────────────────────────

@@ -23,8 +23,14 @@ const barre = computed<Barre | null>(() =>
   barreFret.value === null ? null : { fret: barreFret.value, length: barreLength.value },
 )
 
+// The actual sounding notes (with real MIDI / octave), shared by detection and
+// the piano keyboard so the latter can light the correct keys.
+const selectedNotes = computed(() =>
+  buildSelectedNotes(pressedFrets.value, mutedStrings.value, capoFret.value, 'sounding', barre.value),
+)
+
 const detectedChord = computed<ChordResult | null>(() =>
-  detectChord(buildSelectedNotes(pressedFrets.value, mutedStrings.value, capoFret.value, 'sounding', barre.value)),
+  detectChord(selectedNotes.value),
 )
 
 const shapeChord = computed<ChordResult | null>(() =>
@@ -114,6 +120,7 @@ export function useFretboard() {
     capoFret,
     barreFret,
     barreLength,
+    selectedNotes,
     detectedChord,
     shapeChord,
     toggleFret,
