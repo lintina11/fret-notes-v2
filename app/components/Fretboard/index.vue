@@ -161,13 +161,6 @@
           dominant-baseline="middle"
           class="barre-toggle-text"
         >封閉</text>
-        <circle
-          :cx="BARRE_DOT_X"
-          :cy="TOP_PAD + idx * FRET_GAP + FRET_GAP / 2"
-          :r="BARRE_DOT_R"
-          class="barre-toggle-dot"
-          :class="{ 'barre-toggle-dot--on': barreFret === fretNum }"
-        />
       </g>
 
       <!-- Layer 1: Transparent click targets -->
@@ -251,11 +244,11 @@ const OPEN_RADIUS = 7
 
 // Right-hand column holds the per-row 「封閉」 barre toggles.
 const BARRE_COL_W = 60
-const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 14   // text x
+const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 20  // text x
 const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
 const BARRE_DOT_R = 2
 // The bar extends past its covered strings on both ends, at any barre length
-const BARRE_OVERHANG = 9
+const BARRE_OVERHANG = 13
 
 const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
 const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
@@ -555,14 +548,6 @@ function handleClear(): void {
   font-size: 10px;
   fill: var(--color-text-muted);
   font-family: 'Inter', sans-serif;
-}
-
-.barre-toggle-dot {
-  fill: var(--color-text-muted);
-}
-
-.barre-toggle-dot--on {
-  fill: var(--color-primary);
 }
 
 .clear-btn {
