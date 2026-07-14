@@ -78,7 +78,7 @@ The new page passes `fixedRange = { startMidi: 40, endMidi: 84 }` (**E2–C6**).
 
 ### Page controls (inline in `piano-to-guitar.vue`)
 
-A small controls row:
+A small controls row at the bottom of the page (below the piano):
 - **隱藏非同八度亮點** toggle → drives `showOffOctave`.
 - **清除** button → clears all selected notes.
 - A count indicator (e.g. `3 / 6`).
@@ -154,13 +154,13 @@ Each pressed piano note has its own palette color. For every pressed note:
 ├───────────────────────────────────────────┤
 │  GuitarNeck (horizontal, 6×20, scrolls →)  │
 ├───────────────────────────────────────────┤
-│  controls: [隱藏非同八度亮點]  3/6  [清除] │
-├───────────────────────────────────────────┤
 │  PianoKeyboard (E2–C6, clickable, scales)  │
+├───────────────────────────────────────────┤
+│  controls: [隱藏非同八度亮點]  3/6  [清除] │
 └───────────────────────────────────────────┘
 ```
 
-Guitar neck on top (output), piano on the bottom (input). Both scroll horizontally on narrow screens.
+Guitar neck on top (output), piano in the middle (input), controls row at the bottom. The neck and keyboard scroll horizontally on narrow screens.
 
 ---
 
