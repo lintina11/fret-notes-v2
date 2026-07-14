@@ -12,7 +12,7 @@
             'key--active': key.active,
           }"
         >
-          <span v-if="key.active && !key.isBlack" class="key-label">{{ key.noteName }}</span>
+          <span v-if="key.active" class="key-label">{{ key.noteName }}</span>
         </div>
       </div>
     </div>

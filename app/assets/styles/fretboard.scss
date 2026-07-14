@@ -22,7 +22,6 @@ $transition-ui: border-color 0.15s, color 0.15s;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 16px;
 }
 
 .chord-svg {
@@ -30,6 +29,7 @@ $transition-ui: border-color 0.15s, color 0.15s;
   max-width: 300px;
   height: auto;
   overflow: visible;
+  margin-left: 40px;
 }
 
 // ── String markers ──────────────────────────────────────────────────
@@ -146,6 +146,7 @@ $transition-ui: border-color 0.15s, color 0.15s;
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 20px;
 }
 
 .capo-label {
@@ -169,7 +170,7 @@ $transition-ui: border-color 0.15s, color 0.15s;
 }
 
 .barre-label-text {
-  @include inter-text(8px, 600);
+  @include inter-text(10px, 600);
   fill: var(--color-on-primary);
   pointer-events: none;
 }

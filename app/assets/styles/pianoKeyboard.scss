@@ -48,6 +48,10 @@ $key-white-height: 100px;
   border-radius: 0 0 4px 4px;
   cursor: default;
   transition: $transition-key-bg;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
 
   &--white {
     width: 36px;
@@ -55,13 +59,10 @@ $key-white-height: 100px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     margin-right: 2px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 6px;
     z-index: 1;
 
     &.key--active {
+      color: var(--color-primary);
       background: color-mix(in srgb, var(--color-primary) 25%, var(--color-surface));
       border-color: var(--color-primary);
     }
@@ -77,6 +78,7 @@ $key-white-height: 100px;
     border-radius: 0 0 3px 3px;
 
     &.key--active {
+      color: var(--color-on-primary);
       background: var(--color-primary);
     }
   }
@@ -84,7 +86,6 @@ $key-white-height: 100px;
 
 .key-label {
   @include inter-text(10px, 600);
-  color: var(--color-primary);
 }
 
 // ── Range label ───────────────────────────────────────────────────

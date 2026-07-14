@@ -151,7 +151,7 @@
         <rect
           :x="BARRE_LABEL_X - 4"
           :y="TOP_PAD + idx * FRET_GAP"
-          :width="BARRE_COL_W - 10"
+          :width="BARRE_COL_W - 30"
           :height="FRET_GAP"
           fill="transparent"
         />
@@ -198,9 +198,7 @@
 
     <!-- Navigation row -->
     <div class="nav-row">
-      <span class="nav-label">View</span>
       <button class="nav-btn" :disabled="startFret <= 1" @click="navigate(-1)">▲</button>
-      <span class="nav-label">{{ startFret === 1 ? 'Open' : `${startFret}fr` }}</span>
       <button class="nav-btn" :disabled="startFret >= MAX_START_FRET" @click="navigate(1)">▼</button>
     </div>
 
@@ -236,8 +234,8 @@ const MAX_CAPO = 7
 const STRING_GAP = 28
 const FRET_GAP = 38
 const LEFT_PAD = 28
-const TOP_PAD = 50
-const BOTTOM_PAD = 22
+const TOP_PAD = 30
+const BOTTOM_PAD = 5
 const NUT_THICKNESS = 5
 const DOT_RADIUS = 13
 const OPEN_RADIUS = 7
@@ -245,13 +243,13 @@ const OPEN_RADIUS = 7
 // Right-hand column holds the per-row 「封閉」 barre toggles.
 const BARRE_COL_W = 60
 const BARRE_LABEL_X = LEFT_PAD + 5 * STRING_GAP + 20  // text x
-const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46     // status dot cx
+const BARRE_DOT_X = LEFT_PAD + 5 * STRING_GAP + 46    // status dot cx
 const BARRE_DOT_R = 2
 // The bar extends past its covered strings on both ends, at any barre length
 const BARRE_OVERHANG = 13
 
 const SVG_W = LEFT_PAD + 5 * STRING_GAP + BARRE_COL_W   // 228
-const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 262
+const SVG_H = TOP_PAD + DISPLAY_FRETS * FRET_GAP + BOTTOM_PAD  // 232
 
 // Pre-computed fret line indices: 0, 1, 2, 3, 4, 5
 const FRET_LINE_INDICES = Array.from({ length: DISPLAY_FRETS + 1 }, (_, i) => i)
