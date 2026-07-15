@@ -1,26 +1,19 @@
 <template>
   <div class="app">
     <header class="app-header">
-      <h2 class="app-title">fret notes</h2>
+      <div class="app-header-left">
+        <h2 class="app-title">fret notes</h2>
+        <nav class="app-nav">
+          <NuxtLink to="/guitar-to-piano" class="nav-tab">從吉他</NuxtLink>
+          <NuxtLink to="/piano-to-guitar" class="nav-tab">從鋼琴</NuxtLink>
+        </nav>
+      </div>
       <button class="theme-toggle" @click="toggleTheme" :aria-label="isDark ? '切換亮色模式' : '切換暗色模式'">
         {{ isDark ? '☀️' : '🌙' }}
       </button>
     </header>
 
-    <!-- iPad landscape: top-left Fretboard, top-right ChordResult, bottom PianoKeyboard -->
-    <div class="layout">
-      <div class="layout-top">
-        <div class="panel panel-fretboard">
-          <Fretboard />
-        </div>
-        <div class="panel panel-chord">
-          <ChordResult />
-        </div>
-      </div>
-      <div class="layout-piano">
-        <PianoKeyboard />
-      </div>
-    </div>
+    <NuxtPage />
   </div>
 </template>
 
@@ -48,12 +41,41 @@ function toggleTheme() {
   border-bottom: 1px solid var(--color-border);
 }
 
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .app-title {
   font-family: 'DM Sans', sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--color-primary);
   letter-spacing: -0.5px;
+}
+
+.app-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-tab {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-tab.router-link-active {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
 }
 
 .theme-toggle {
@@ -66,47 +88,5 @@ function toggleTheme() {
   line-height: 1;
   min-width: 44px;
   min-height: 44px;
-}
-
-.layout {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.layout-top {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.layout-piano {
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* iPad portrait / phone: ChordResult → Fretboard → Piano */
-.panel-chord { order: 1; }
-.panel-fretboard { order: 2; }
-.layout-piano { order: 3; }
-
-/* iPad landscape: left Fretboard | right ChordResult / bottom Piano */
-@media (orientation: landscape) and (min-width: 768px) {
-  .layout-top {
-    flex-direction: row;
-    flex: 1;
-  }
-
-  .panel-fretboard {
-    flex: 1;
-    order: 1;
-  }
-
-  .panel-chord {
-    flex: 1;
-    order: 2;
-  }
 }
 </style>
