@@ -10,7 +10,10 @@
             'key--black': key.isBlack,
             'key--white': !key.isBlack,
             'key--active': key.active,
+            'key--interactive': interactive,
           }"
+          :style="key.colorIndex !== null ? { '--key-active-color': `var(--note-color-${key.colorIndex})` } : undefined"
+          @click="interactive && emit('toggle', key.midi)"
         >
           <span v-if="key.active" class="key-label">{{ key.noteName }}</span>
         </div>
@@ -26,6 +29,18 @@ import { useFretboard } from '~/composables/useFretboard'
 import { NOTE_NAMES } from '~~/core/music-theory/notes'
 import { computePianoRange } from '~~/core/music-theory/piano'
 
+const props = withDefaults(defineProps<{
+  interactive?: boolean
+  fixedRange?: { startMidi: number; endMidi: number } | null
+  activeColorMap?: Map<number, number> | null
+}>(), {
+  interactive: false,
+  fixedRange: null,
+  activeColorMap: null,
+})
+
+const emit = defineEmits<{ toggle: [midi: number] }>()
+
 const { selectedNotes } = useFretboard()
 
 // Black key pattern within an octave (pitch classes)
@@ -37,31 +52,37 @@ interface PianoKey {
   noteName: string
   isBlack: boolean
   active: boolean
+  colorIndex: number | null
 }
 
-// Real sounding MIDI values — lets us light the exact key (octave-aware),
-// not just every key of a pitch class.
+// Active source: an externally supplied color map (new interactive page) or,
+// by default, the shared fretboard's sounding notes (original read-only page).
 const activeMidis = computed<number[]>(() =>
-  selectedNotes.value.map(n => n.midi),
+  props.activeColorMap
+    ? [...props.activeColorMap.keys()]
+    : selectedNotes.value.map(n => n.midi),
 )
 
-const activeMidiSet = computed<Set<number>>(() =>
-  new Set(activeMidis.value),
-)
+const activeMidiSet = computed<Set<number>>(() => new Set(activeMidis.value))
 
-// Dynamic window anchored to the highest note's octave (see computePianoRange).
-const range = computed(() => computePianoRange(activeMidis.value))
+// Fixed range when provided (new page), else auto-range to the active notes.
+const range = computed(() =>
+  props.fixedRange ?? computePianoRange(activeMidis.value),
+)
 
 const visibleKeys = computed<PianoKey[]>(() => {
   const keys: PianoKey[] = []
   for (let midi = range.value.startMidi; midi <= range.value.endMidi; midi++) {
     const pc = midi % 12
+    const colorIndex = props.activeColorMap?.get(midi) ?? null
+    const active = props.activeColorMap ? colorIndex !== null : activeMidiSet.value.has(midi)
     keys.push({
       midi,
       pitchClass: pc,
       noteName: NOTE_NAMES[pc]!,
       isBlack: BLACK_PCS.has(pc),
-      active: activeMidiSet.value.has(midi),
+      active,
+      colorIndex,
     })
   }
   return keys

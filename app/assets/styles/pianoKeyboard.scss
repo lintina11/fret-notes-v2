@@ -62,9 +62,9 @@ $key-white-height: 100px;
     z-index: 1;
 
     &.key--active {
-      color: var(--color-primary);
-      background: color-mix(in srgb, var(--color-primary) 25%, var(--color-surface));
-      border-color: var(--color-primary);
+      color: var(--key-active-color, var(--color-primary));
+      background: color-mix(in srgb, var(--key-active-color, var(--color-primary)) 25%, var(--color-surface));
+      border-color: var(--key-active-color, var(--color-primary));
     }
   }
 
@@ -79,9 +79,13 @@ $key-white-height: 100px;
 
     &.key--active {
       color: var(--color-on-primary);
-      background: var(--color-primary);
+      background: var(--key-active-color, var(--color-primary));
     }
   }
+}
+
+.key--interactive {
+  cursor: pointer;
 }
 
 .key-label {
