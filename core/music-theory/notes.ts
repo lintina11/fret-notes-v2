@@ -18,3 +18,8 @@ export function fretToMidi(stringIndex: number, fret: number): number {
 export function fretToPitchClass(stringIndex: number, fret: number): number {
   return midiToPitchClass(fretToMidi(stringIndex, fret))
 }
+
+// Octave number for a MIDI value, C4 = MIDI 60 → octave 4.
+export function midiToOctave(midi: number): number {
+  return Math.floor(midi / 12) - 1
+}
