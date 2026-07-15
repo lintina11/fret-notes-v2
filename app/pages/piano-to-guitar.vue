@@ -1,7 +1,5 @@
 <template>
   <div class="note-map-page">
-    <GuitarNeck :positions="litPositions" />
-
     <div class="note-map-piano">
       <PianoKeyboard
         interactive
@@ -11,10 +9,14 @@
       />
     </div>
 
+    <ChordResult :chord="detectedChord" :capo-fret="0" empty-hint="點鋼琴鍵來識別和弦" />
+
+    <GuitarNeck :positions="litPositions" />
+
     <div class="note-map-controls">
       <label class="control-toggle">
-        <input type="checkbox" :checked="!showOffOctave" @change="showOffOctave = !showOffOctave" />
-        隱藏非同八度亮點
+        <input type="checkbox" :checked="showOffOctave" @change="showOffOctave = !showOffOctave" />
+        顯示非同八度亮點
       </label>
       <span class="control-count">{{ selectedMidis.size }} / {{ MAX_NOTES }}</span>
       <button class="control-clear" @click="clear">清除</button>
@@ -26,7 +28,7 @@
 import { usePianoNoteMap } from '~/composables/usePianoNoteMap'
 import { MAX_NOTES } from '~~/core/music-theory/note-map'
 
-const { selectedMidis, showOffOctave, litPositions, toggleNote, clear } = usePianoNoteMap()
+const { selectedMidis, showOffOctave, litPositions, detectedChord, toggleNote, clear } = usePianoNoteMap()
 </script>
 
 <style scoped>

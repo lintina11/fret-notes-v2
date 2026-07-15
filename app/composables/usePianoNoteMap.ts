@@ -5,10 +5,12 @@ import {
   computeLitPositions,
   type LitPosition,
 } from '~~/core/music-theory/note-map'
+import { detectChord, type ChordResult } from '~~/core/music-theory/chord-detector'
+import { midiToPitchClass } from '~~/core/music-theory/notes'
 
 // Singleton state for the piano→guitar page. Independent of useFretboard.
 const selectedMidis = ref(new Map<number, number>())  // midi → colorIndex
-const showOffOctave = ref(true)
+const showOffOctave = ref(false)                        // off-octave dots hidden by default
 
 // Toggle a note: remove (freeing its color) if present; otherwise assign the
 // lowest free color, ignoring the click once MAX_NOTES are already selected.
@@ -33,6 +35,17 @@ const litPositions = computed<LitPosition[]>(() =>
   computeLitPositions(selectedMidis.value, showOffOctave.value),
 )
 
+// Chord detected from the selected notes. detectChord only needs midi + pitch
+// class; the selected notes carry real octaves, so slash chords resolve too.
+const detectedChord = computed<ChordResult | null>(() =>
+  detectChord(
+    [...selectedMidis.value.keys()].map(midi => ({
+      midi,
+      pitchClass: midiToPitchClass(midi),
+    })),
+  ),
+)
+
 export function usePianoNoteMap() {
-  return { selectedMidis, showOffOctave, litPositions, toggleNote, clear }
+  return { selectedMidis, showOffOctave, litPositions, detectedChord, toggleNote, clear }
 }
