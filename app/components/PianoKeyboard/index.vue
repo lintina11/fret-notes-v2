@@ -119,5 +119,5 @@ watch(visibleKeys, () => nextTick(recompute))
 </script>
 
 <style scoped lang="scss">
-@import "/assets/styles/pianoKeyboard.scss";
+@use "/assets/styles/pianoKeyboard.scss" as *;
 </style>

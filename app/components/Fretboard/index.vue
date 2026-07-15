@@ -384,5 +384,5 @@ function handleClear(): void {
 </script>
 
 <style lang="scss" scoped>
-@import "/assets/styles/fretboard.scss";
+@use "/assets/styles/fretboard.scss" as *;
 </style>

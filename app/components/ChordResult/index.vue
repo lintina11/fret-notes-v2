@@ -84,5 +84,5 @@ const chordKey = computed(() => {
 </script>
 
 <style scoped lang="scss">
-@import "/assets/styles/chordResult.scss";
+@use "/assets/styles/chordResult.scss" as *;
 </style>
