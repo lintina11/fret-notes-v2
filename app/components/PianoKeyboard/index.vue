@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
-import { NOTE_NAMES } from '~~/core/music-theory/notes'
+import { NOTE_NAMES, midiToNoteName, midiToOctave } from '~~/core/music-theory/notes'
 import { computePianoRange } from '~~/core/music-theory/piano'
 
 const props = withDefaults(defineProps<{
@@ -89,9 +89,9 @@ const visibleKeys = computed<PianoKey[]>(() => {
 })
 
 const rangeLabel = computed(() => {
-  const startOct = Math.floor(range.value.startMidi / 12) - 1
-  const endOct = Math.floor(range.value.endMidi / 12) - 1
-  return `C${startOct} – C${endOct}`
+  const s = range.value.startMidi
+  const e = range.value.endMidi
+  return `${midiToNoteName(s)}${midiToOctave(s)} – ${midiToNoteName(e)}${midiToOctave(e)}`
 })
 
 // ── Auto-scale to fit the container ───────────────────────────────

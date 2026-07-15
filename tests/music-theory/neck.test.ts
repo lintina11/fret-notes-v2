@@ -31,15 +31,23 @@ describe('findExactPositions', () => {
     ])
   })
 
+  it('respects a maxFret override', () => {
+    // C4 (60): default gives frets 20,15,10,5,1; maxFret=6 drops 20,15,10
+    expect(findExactPositions(60, 6)).toEqual([
+      { stringIndex: 3, fret: 5 },
+      { stringIndex: 4, fret: 1 },
+    ])
+  })
+})
+
+describe('findPitchClassPositions', () => {
   it('never returns a fret above NECK_FRETS', () => {
     for (const p of findPitchClassPositions(0)) {
       expect(p.fret).toBeLessThanOrEqual(NECK_FRETS)
       expect(p.fret).toBeGreaterThanOrEqual(0)
     }
   })
-})
 
-describe('findPitchClassPositions', () => {
   it('every returned C position really is a C', () => {
     const cPositions = findPitchClassPositions(0)
     expect(cPositions.length).toBeGreaterThan(0)

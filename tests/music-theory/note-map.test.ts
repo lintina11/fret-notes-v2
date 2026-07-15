@@ -46,4 +46,8 @@ describe('computeLitPositions', () => {
   })
 
   it('exposes MAX_NOTES = 6', () => expect(MAX_NOTES).toBe(6))
+
+  it('returns [] for an empty selection', () => {
+    expect(computeLitPositions(new Map(), true)).toEqual([])
+  })
 })

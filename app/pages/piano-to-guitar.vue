@@ -16,7 +16,7 @@
         <input type="checkbox" :checked="!showOffOctave" @change="showOffOctave = !showOffOctave" />
         隱藏非同八度亮點
       </label>
-      <span class="control-count">{{ selectedMidis.size }} / 6</span>
+      <span class="control-count">{{ selectedMidis.size }} / {{ MAX_NOTES }}</span>
       <button class="control-clear" @click="clear">清除</button>
     </div>
   </div>
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { usePianoNoteMap } from '~/composables/usePianoNoteMap'
+import { MAX_NOTES } from '~~/core/music-theory/note-map'
 
 const { selectedMidis, showOffOctave, litPositions, toggleNote, clear } = usePianoNoteMap()
 </script>
