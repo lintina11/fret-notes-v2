@@ -55,7 +55,7 @@
     </template>
 
     <div v-else class="empty-state">
-      <p>點選指板上的格子來識別和弦</p>
+      <p>{{ emptyHint }}</p>
     </div>
   </div>
 </template>
@@ -63,11 +63,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFretboard } from '~/composables/useFretboard'
+import type { ChordResult } from '~~/core/music-theory/chord-detector'
 
-const { detectedChord, shapeChord, capoFret } = useFretboard()
+const props = defineProps<{
+  chord?: ChordResult | null   // undefined ⇒ fall back to useFretboard().detectedChord
+  capoFret?: number            // undefined ⇒ fall back to useFretboard().capoFret
+  emptyHint?: string           // undefined ⇒ default guitar-page hint
+}>()
+
+const fb = useFretboard()
+
+const detectedChord = computed(() => props.chord !== undefined ? props.chord : fb.detectedChord.value)
+const capoFret = computed(() => props.capoFret ?? fb.capoFret.value)
+const emptyHint = computed(() => props.emptyHint ?? '點選指板上的格子來識別和弦')
 
 const shapeLabel = computed(() => {
-  const s = shapeChord.value
+  const s = fb.shapeChord.value
   if (!s) return ''
   if (s.unrecognized) return '(音集)'
   return `${s.root}${s.symbol}${s.bassNote ? '/' + s.bassNote : ''}`
