@@ -116,4 +116,30 @@ describe('detectChord', () => {
     expect(result!.alternates).toContain('Eaug/C')
     expect(result!.alternates).toContain('G#aug/C')
   })
+
+  it('detects a chord from plain {midi,pitchClass} objects (no string/fret)', () => {
+    // C major triad: C4(60,pc0) E4(64,pc4) G4(67,pc7)
+    const result = detectChord([
+      { midi: 60, pitchClass: 0 },
+      { midi: 64, pitchClass: 4 },
+      { midi: 67, pitchClass: 7 },
+    ])
+    expect(result).not.toBeNull()
+    expect(result!.root).toBe('C')
+    expect(result!.symbol).toBe('')
+    expect(result!.bassNote).toBeNull()
+  })
+
+  it('detects a slash chord from {midi,pitchClass} using the lowest midi as bass', () => {
+    // Am/E: E3(52,pc4) is lowest, A3(57,pc9), C4(60,pc0)
+    const result = detectChord([
+      { midi: 52, pitchClass: 4 },
+      { midi: 57, pitchClass: 9 },
+      { midi: 60, pitchClass: 0 },
+    ])
+    expect(result).not.toBeNull()
+    expect(result!.root).toBe('A')
+    expect(result!.symbol).toBe('m')
+    expect(result!.bassNote).toBe('E')
+  })
 })

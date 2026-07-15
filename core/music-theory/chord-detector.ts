@@ -27,7 +27,7 @@ export interface ChordResult {
   unrecognized?: boolean
 }
 
-export function detectChord(notes: SelectedNote[]): ChordResult | null {
+export function detectChord(notes: { midi: number; pitchClass: number }[]): ChordResult | null {
   if (notes.length < 2) return null
 
   // Unique pitch classes present
