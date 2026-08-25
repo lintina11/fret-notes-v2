@@ -1,0 +1,4 @@
+# Archived, superseded design specs — consolidated into
+# docs/superpowers/specs/00-design-reference.md (+ -zh). Kept for history only;
+# excluded from Claude's context so the master reference is the single source of truth.
+docs/superpowers/specs/_archive/
